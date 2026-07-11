@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Summer Ops // Field Manual</title>
+<meta name="description" content="Personal summer skills field manual and session tracker.">
+
+<!-- ===== Installable / standalone app meta (iOS + Android) ===== -->
+<meta name="theme-color" content="#EAE6DC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Field Manual">
+<meta name="application-name" content="Field Manual">
+<!-- apple-touch-icon href + web app manifest are generated at runtime (installPWA)
+     so the whole thing stays one self-contained file with no external image assets. -->
+<link rel="apple-touch-icon" id="appleIcon">
+<link rel="icon" id="favIcon" type="image/png">
+
+<!-- Fonts: kept as a link (embedding 6 base64 weights would balloon this single
+     file into the hundreds of KB). The app is fully functional OFFLINE because
+     every font-family falls back through --font-head / --font-mono to condensed
+     and monospace system fonts, so nothing breaks when the stylesheet can't load. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAE6DC; --paper-2:#F1EEE6; --line:#B4AC98;
+    --ink:#1F2420; --ink-soft:#5B5A4E;
+    --rust:#BE6A1F; --teal:#3F5D50; --card:#fff;
+    --skip:#8a3b1f;
+    --well:#D8D3C4; --skip-bg:#f3ece8; --callout-bg:#f6efe8;
+    --allclear-bg:#eef2ee; --done-text:#9a9689; --placeholder:#a8a294;
+    --pulse-line:#3a3f39; --pulse-risk-txt:#e8b98f;
+    /* Font stacks with offline-safe fallbacks (Oswald is condensed; Arial Narrow
+       is the closest widely-installed system substitute). */
+    --font-head:'Oswald','Arial Narrow','Helvetica Neue Condensed',Arial,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;
+    color-scheme:light;
+  }
+  /* Bedtime-friendly dark variant of the paper aesthetic (toggled via ☾ in the
+     header, persisted in fm:_meta). Same ink/rust/teal language, lamp-off paper. */
+  [data-theme="dark"]{
+    --paper:#1B1D1A; --paper-2:#242720; --line:#3E4238;
+    --ink:#E5E0D1; --ink-soft:#A19D8E;
+    --rust:#D08A3F; --teal:#7FA893; --card:#232620;
+    --skip:#C97B54;
+    --well:#2C2F28; --skip-bg:#2A241F; --callout-bg:#282219;
+    --allclear-bg:#232B22; --done-text:#6E6B5F; --placeholder:#6E6B5F;
+    --pulse-line:#C9C3B2; --pulse-risk-txt:#8a5a26;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:linear-gradient(var(--line) 1px,transparent 1px);
+    background-size:100% 40px;
+    color:var(--ink);
+    font-family:var(--font-mono);
+    min-height:100vh;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:20px 14px 80px;}
+
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:14px;}
+  .head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+  .themebtn{flex:0 0 auto;width:38px;height:38px;border:2px solid var(--ink);background:var(--paper-2);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .themebtn:active{transform:translateY(1px);}
+  .themebtn:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .eyebrow{font-size:11px;letter-spacing:.14em;color:var(--ink-soft);margin-bottom:4px;}
+  h1{font-family:var(--font-head);font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:26px;margin:0;}
+
+  /* tab bar */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:12px 0;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to right,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%);}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto;border:2px solid var(--ink);background:var(--paper-2);
+    padding:7px 12px;cursor:pointer;font-family:var(--font-head);font-weight:600;
+    text-transform:uppercase;font-size:13px;letter-spacing:.03em;color:var(--ink);
+    white-space:nowrap;position:relative;-webkit-tap-highlight-color:transparent;
+  }
+  .tab .wo{font-size:9px;color:var(--ink-soft);display:block;letter-spacing:.08em;}
+  .tab.active{background:var(--ink);color:var(--paper);}
+  .tab.active .wo{color:var(--line);}
+  .tab .ring{
+    position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;
+    background:var(--rust);opacity:0;
+  }
+  .tab.complete .ring{opacity:1;background:#3f5d50;}
+  .tab:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+
+  section{display:none;}
+  section.active{display:block;animation:fade .2s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .goal{
+    background:var(--card);border:2px solid var(--ink);padding:13px 15px;margin-bottom:14px;
+  }
+  .goal .lbl{font-size:10px;letter-spacing:.12em;color:var(--rust);font-weight:700;margin-bottom:5px;}
+  .goal p{margin:0 0 8px;font-size:13.5px;line-height:1.5;}
+  .goal p:last-child{margin-bottom:0;}
+  .goal .method{color:var(--ink-soft);font-size:12.5px;}
+
+  .block-title{
+    font-family:var(--font-head);font-weight:700;text-transform:uppercase;
+    font-size:15px;letter-spacing:.04em;margin:20px 0 9px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .block-title::before{content:"";width:14px;height:14px;background:var(--rust);flex:0 0 auto;}
+  .block-title.teal::before{background:var(--teal);}
+
+  /* progress */
+  .prog{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
+  .prog-bar{flex:1;height:14px;border:2px solid var(--ink);background:var(--well);display:flex;}
+  .prog-fill{background:var(--rust);height:100%;transition:width .25s ease;}
+  .prog-num{font-size:12px;color:var(--ink-soft);font-family:var(--font-head);font-weight:600;letter-spacing:.03em;white-space:nowrap;}
+
+  /* stack cards */
+  .stack{display:flex;flex-direction:column;gap:7px;}
+  .res{
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);
+    padding:9px 12px;font-size:12.5px;line-height:1.45;
+  }
+  .res.skip{border-left-color:var(--skip);background:var(--skip-bg);}
+  .res .rname{font-family:var(--font-head);font-weight:600;font-size:13.5px;text-transform:uppercase;letter-spacing:.02em;}
+  .res .badge{font-size:9px;border:1px solid currentColor;padding:1px 5px;margin-left:6px;vertical-align:middle;letter-spacing:.05em;}
+  .res .badge.free{color:var(--teal);}
+  .res .badge.paid{color:var(--rust);}
+  .res .badge.skipb{color:var(--skip);}
+  .res .rnote{color:var(--ink-soft);margin-top:3px;}
+
+  /* checkable rows */
+  .check{
+    display:flex;gap:11px;padding:11px 4px;border-bottom:1px solid var(--line);
+    cursor:pointer;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;
+  }
+  .check:last-child{border-bottom:none;}
+  .check:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .box{flex:0 0 auto;width:19px;height:19px;border:2px solid var(--ink);margin-top:1px;background:var(--card);display:flex;align-items:center;justify-content:center;}
+  .box svg{width:13px;height:13px;opacity:0;transition:opacity .15s;stroke:var(--paper);}
+  .check.done .box{background:var(--ink);}
+  .check.done .box svg{opacity:1;}
+  .check .ctext{font-size:13px;line-height:1.45;flex:1;}
+  .check.done .ctext{color:var(--done-text);text-decoration:line-through;text-decoration-color:var(--line);}
+  .cstamp{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%) rotate(-8deg) scale(.5);
+    opacity:0;border:2px double var(--teal);color:var(--teal);font-family:var(--font-head);
+    font-weight:700;font-size:11px;letter-spacing:.06em;padding:1px 6px;pointer-events:none;
+    transition:opacity .18s,transform .18s;
+  }
+  .check.done .cstamp{opacity:.8;transform:translateY(-50%) rotate(-8deg) scale(1);}
+
+  /* activity cards */
+  .acts{display:flex;flex-direction:column;gap:7px;}
+  .act{
+    background:var(--card);border:1px solid var(--line);padding:9px 12px;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .act:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .act-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .act-title{font-family:var(--font-head);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.02em;}
+  .act-time{font-size:10px;color:var(--rust);border:1px solid var(--rust);padding:1px 5px;white-space:nowrap;flex:0 0 auto;letter-spacing:.04em;}
+  .act-desc{font-size:12px;color:var(--ink-soft);line-height:1.45;margin-top:6px;display:none;}
+  .act.open .act-desc{display:block;}
+  .act-title::before{content:"+ ";color:var(--line);}
+  .act.open .act-title::before{content:"– ";}
+
+  /* session logger */
+  .logger{background:var(--card);border:2px solid var(--ink);padding:12px 14px;margin:14px 0;}
+  .logger-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .logger-stat{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+  .logger-stat b{font-family:var(--font-head);font-size:22px;color:var(--ink);display:block;letter-spacing:.02em;}
+  .logbtn{
+    border:2px solid var(--ink);background:var(--rust);color:#fff;font-family:var(--font-head);
+    font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:.04em;padding:10px 16px;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .logbtn:active{transform:translateY(1px);}
+  .logbtn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .logged-today{font-size:10px;color:var(--teal);letter-spacing:.05em;margin-top:4px;}
+
+  /* week plan */
+  .week{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);background:var(--card);}
+  .wday{display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.45;}
+  .wday:last-child{border-bottom:none;}
+  .wday .d{font-family:var(--font-head);font-weight:700;color:var(--rust);flex:0 0 66px;text-transform:uppercase;font-size:11px;letter-spacing:.04em;padding-top:1px;}
+
+  /* overview table */
+  .otable{border:2px solid var(--ink);background:var(--card);margin-bottom:14px;}
+  .orow{display:flex;border-bottom:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .orow:last-child{border-bottom:none;}
+  .orow:hover{background:var(--paper-2);}
+  .orow .owo{flex:0 0 60px;font-family:var(--font-head);font-weight:700;font-size:12px;padding:11px 8px;color:var(--rust);border-right:1px solid var(--line);letter-spacing:.03em;}
+  .orow .obody{flex:1;padding:9px 11px;}
+  .orow .oname{font-family:var(--font-head);font-weight:600;text-transform:uppercase;font-size:14px;letter-spacing:.02em;}
+  .orow .odesc{font-size:11.5px;color:var(--ink-soft);margin-top:2px;line-height:1.4;}
+  .orow .omini{flex:0 0 52px;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:11px;color:var(--ink-soft);border-left:1px solid var(--line);}
+
+  .callout{border:2px dashed var(--rust);background:var(--callout-bg);padding:11px 14px;font-size:12.5px;line-height:1.5;margin:14px 0;}
+  .callout b{font-family:var(--font-head);letter-spacing:.02em;}
+
+  .admin{display:flex;gap:8px;margin-top:8px;}
+  .admin .check{flex:1;border:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card);padding:10px;}
+
+  footer{margin-top:26px;font-size:10px;color:var(--ink-soft);text-align:center;letter-spacing:.04em;}
+  .err{font-size:11px;color:var(--skip);margin-top:8px;display:none;}
+
+  /* streak + dots */
+  .streak{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+  .stat-chip{border:2px solid var(--ink);background:var(--paper-2);padding:3px 8px;font-family:var(--font-head);font-weight:600;font-size:11px;letter-spacing:.03em;text-transform:uppercase;}
+  .stat-chip b{color:var(--rust);font-size:13px;}
+  .stat-chip.hot{background:var(--rust);color:#fff;border-color:var(--rust);}
+  .stat-chip.hot b{color:#fff;}
+  .dots-wrap{margin-top:10px;}
+  .dots-lbl{font-size:9px;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:4px;}
+  .dots{display:flex;gap:3px;}
+  .dot{flex:1;height:16px;background:var(--well);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .dot.on{background:var(--teal);border-color:var(--teal);}
+  .dot.today{border:2px solid var(--ink);}
+  .dot:hover{border-color:var(--ink);}
+  .undo{background:none;border:1px solid var(--line);color:var(--ink-soft);font-family:var(--font-mono);font-size:10px;padding:3px 8px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-top:8px;letter-spacing:.04em;}
+  .undo:hover{border-color:var(--ink);color:var(--ink);}
+  .undo:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+
+  /* notes / diary */
+  .notes-box{margin-top:8px;}
+  textarea.notes{
+    width:100%;min-height:78px;resize:vertical;background:var(--card);border:1px solid var(--line);
+    border-left:4px solid var(--rust);padding:10px 12px;font-family:var(--font-mono);
+    font-size:12.5px;line-height:1.5;color:var(--ink);
+  }
+  textarea.notes:focus{outline:none;border-left-color:var(--ink);}
+  textarea.notes::placeholder{color:var(--placeholder);}
+  .notes-saved{font-size:10px;color:var(--teal);letter-spacing:.05em;margin-top:4px;height:12px;transition:opacity .3s;}
+
+  /* overview pulse */
+  .pulse{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:12px 15px;margin-bottom:14px;}
+  .pulse-lbl{font-size:10px;letter-spacing:.12em;color:var(--line);margin-bottom:8px;}
+  .pulse-row{display:flex;gap:18px;flex-wrap:wrap;}
+  .pulse-stat b{font-family:var(--font-head);font-weight:700;font-size:24px;color:var(--paper);display:block;line-height:1;letter-spacing:.02em;}
+  .pulse-stat span{font-size:10px;letter-spacing:.06em;color:var(--line);text-transform:uppercase;}
+  .pulse-risk{margin-top:10px;padding-top:9px;border-top:1px solid var(--pulse-line);font-size:11.5px;line-height:1.45;color:var(--pulse-risk-txt);}
+  .pulse-risk b{color:var(--paper);font-family:var(--font-head);letter-spacing:.02em;}
+
+  /* today tab */
+  .tpulse{font-size:12px;color:var(--ink-soft);margin-bottom:14px;letter-spacing:.02em;line-height:1.6;}
+  .tpulse b{color:var(--ink);font-family:var(--font-head);font-weight:600;}
+  .hero{border:2px solid var(--ink);background:var(--card);padding:14px 16px;margin-bottom:16px;border-top:6px solid var(--rust);}
+  .hero-lbl{font-family:var(--font-head);font-weight:700;font-size:11px;letter-spacing:.14em;color:var(--rust);margin-bottom:8px;}
+  .hero-lbl.risk{color:#fff;background:var(--rust);display:inline-block;padding:2px 8px;}
+  .hero-lbl.bonus{color:var(--teal);}
+  .hero-skill{font-family:var(--font-head);font-weight:700;text-transform:uppercase;font-size:22px;letter-spacing:.01em;line-height:1;}
+  .hero-skill .wo{font-size:11px;color:var(--ink-soft);letter-spacing:.06em;}
+  .hero-ms{font-size:12.5px;color:var(--ink-soft);margin-top:9px;line-height:1.45;}
+  .hero-ms b{color:var(--ink);}
+  .hero-act{background:var(--paper-2);border-left:3px solid var(--teal);padding:9px 11px;margin-top:11px;font-size:12.5px;line-height:1.5;}
+  .hero-act .at{font-family:var(--font-head);font-weight:600;text-transform:uppercase;font-size:13px;letter-spacing:.02em;}
+  .hero-act .atime{font-size:10px;color:var(--rust);border:1px solid var(--rust);padding:1px 5px;margin-left:6px;letter-spacing:.04em;}
+  .hero-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .hero-btns button{font-family:var(--font-head);font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.03em;padding:9px 14px;border:2px solid var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .hero-btns .primary{background:var(--rust);color:#fff;}
+  .hero-btns .ghost{background:var(--paper-2);color:var(--ink);}
+  .hero-btns button:active{transform:translateY(1px);}
+  .hero-allclear{border:2px dashed var(--teal);background:var(--allclear-bg);padding:18px;text-align:center;font-family:var(--font-head);font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--teal);margin-bottom:16px;line-height:1.5;font-size:15px;}
+  .tgroup-lbl{font-family:var(--font-head);font-weight:700;text-transform:uppercase;font-size:13px;letter-spacing:.05em;margin:18px 0 8px;display:flex;align-items:center;gap:8px;color:var(--ink);}
+  .tgroup-lbl::before{content:"";width:12px;height:12px;background:var(--rust);flex:0 0 auto;}
+  .tgroup-lbl.flex::before{background:var(--teal);}
+  .trow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);padding:10px 12px;margin-bottom:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .trow.done{opacity:.62;}
+  .trow:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .tdot{width:12px;height:12px;border:2px solid var(--ink);flex:0 0 auto;background:var(--card);}
+  .trow.done .tdot{background:var(--teal);border-color:var(--teal);}
+  .tdot.flex{border-color:var(--teal);border-radius:50%;}
+  .tbody{flex:1;min-width:0;}
+  .tname{font-family:var(--font-head);font-weight:600;text-transform:uppercase;font-size:14px;letter-spacing:.02em;}
+  .tname .tstreak{font-size:10px;color:var(--rust);margin-left:6px;letter-spacing:.03em;}
+  .tname .trest{font-size:9px;color:var(--teal);border:1px solid var(--teal);padding:1px 4px;margin-left:6px;letter-spacing:.06em;vertical-align:1px;}
+  .tnext{font-size:11.5px;color:var(--ink-soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tlog{flex:0 0 auto;font-family:var(--font-head);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.03em;padding:7px 11px;border:2px solid var(--ink);background:var(--rust);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .tlog.done{background:var(--card);color:var(--teal);border-color:var(--teal);}
+  .tlog:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+  /* data / backup row (export + import) */
+  .datarow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:16px;padding-bottom:env(safe-area-inset-bottom);}
+  .datalbl{font-family:var(--font-head);font-weight:700;font-size:10px;letter-spacing:.12em;color:var(--ink-soft);}
+  .databtn{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;border:1px solid var(--line);background:var(--paper-2);color:var(--ink-soft);padding:5px 9px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .databtn:hover{border-color:var(--ink);color:var(--ink);}
+  .databtn:active{transform:translateY(1px);}
+  .databtn:focus-visible{outline:2px solid var(--rust);outline-offset:2px;}
+  .datamsg{font-size:10px;color:var(--teal);letter-spacing:.05em;min-height:12px;flex-basis:100%;text-align:center;transition:opacity .3s;}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="head-row">
+      <div>
+        <div class="eyebrow">FIELD MANUAL · SUMMER 2026</div>
+        <h1>Summer Ops</h1>
+      </div>
+      <button class="themebtn" id="themeToggle" type="button" title="Toggle bedtime (dark) theme" aria-label="Toggle bedtime theme">☾</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="err" id="err">Couldn't save progress — it may not persist next time.</div>
+
+  <div id="content"></div>
+
+  <footer>ONE COURSE PER SKILL. RUN IT. LOG IT. LET THE TRACKER TELL THE TRUTH.</footer>
+
+  <div class="datarow">
+    <span class="datalbl">DATA</span>
+    <button class="databtn" id="btnExport" type="button" title="Download a JSON backup of all your progress">Export backup</button>
+    <button class="databtn" id="btnImport" type="button" title="Restore from a backup file">Import file</button>
+    <button class="databtn" id="btnPaste" type="button" title="Restore from pasted backup text">Paste</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <span class="datamsg" id="datamsg"></span>
+    <span class="datamsg" id="backupNudge" style="color:var(--ink-soft);opacity:1"></span>
+  </div>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#EAE6DC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+
+const SKILLS = {
+  today: {
+    title:'Today', wo:'NOW', isToday:true
+  },
+  overview: {
+    title:'Overview', wo:'INDEX', isOverview:true
+  },
+  bass:{
+    wo:'WO-01', title:'Bass', tag:'LESSON',
+    goal:'Get a tutor booked, and independently reach the point where you can lock into a groove with a backing track and play a few full songs cleanly.',
+    method:'A tutor for feedback and accountability, plus StudyBass as your structured, free self-study spine between lessons. StudyBass teaches the theory a bassist actually needs (scales, chord tones, how basslines are built), not just songs; pair it with YouTube for visual technique demos. The tutor fixes what a page can\'t see (your hands, your timing); the course keeps you moving on off days.',
+    stack:[
+      {name:'Private tutor', badge:'primary', note:'Bass isn\'t offered at Ankara government institutions (checked), so this is private. Find via Instagram (Ankara bas gitar dersi), Sahibinden, or a local music school. Weekly, in person ideally.'},
+      {name:'StudyBass (free)', badge:'primary', note:'One of the most respected free bass curricula. Ordered lesson-by-lesson so you don\'t drift. Strong on the WHY: scales, intervals, chord tones, how basslines are constructed. Work through it in order, this is your between-lessons spine.'},
+      {name:'YouTube (free, technique demos)', badge:'free', note:'StudyBass is mostly text + diagrams, so it can\'t show hand movement. When a lesson describes a technique, pull up a free YouTube video of that same technique to watch it done. StudyBass for the what/why, YouTube for the watch-me.'},
+      {name:'Free backing tracks (YouTube)', badge:'free', note:'StudyBass has less song-based progression than paid courses. Once you know a scale, search "bass backing track [key] [genre]" and play over it. Replaces the play-along songs a paid course would give you.'},
+      {name:'GuitarTuna', badge:'free', note:'Tuning. Non-negotiable, tune every session before you touch a note.'},
+      {name:'Soundbrenner Metronome', badge:'free', note:'Highest-rated metronome app. Timing is the whole job of a bassist; you will live in this.'},
+      {name:'BassBuzz (paid, optional later)', badge:'skip', note:'Not needed. If you ever want a polished video-led course with someone demonstrating every step, "Beginner to Badass" is the best paid option (one-time payment). But StudyBass + YouTube covers the same ground free. Skip unless budget frees up and you want the video hand-holding.'}
+    ],
+    milestones:[
+      'Setup done: bass tuned, tuner + metronome installed, you can name the 4 open strings (E-A-D-G) without looking',
+      'First tutor lesson booked and attended',
+      'Working through StudyBass in order: finished the foundational lessons (right-hand technique, note names)',
+      'Clean plucking: alternating index/middle, even tone, no buzzing, along to a slow metronome',
+      'First scale learned from StudyBass (major scale shape), played cleanly in time',
+      'Fretboard basics: natural notes on the E and A strings without counting',
+      'First bassline over a backing track: play in time for a full loop without drifting',
+      'Three-song set: three songs/basslines you can play through cleanly on demand'
+    ],
+    activities:[
+      {t:'Tune + warm up', time:'5 MIN', d:'GuitarTuna, tune all 4 strings. Then play each open string one note per metronome click at 60 BPM, index/middle alternating.'},
+      {t:'StudyBass lesson', time:'25 MIN', d:'Do the next lesson(s) in order on studybass.com. Read it, then actually do the exercise on the bass, don\'t just read on. If a technique is described, pull up a YouTube demo to see the hands.'},
+      {t:'Metronome plucking drill', time:'15 MIN', d:'60 BPM, play the E string one note per click, perfectly even, 2 min. Bump to 70, repeat. Goal is even tone and dead-on timing, not speed.'},
+      {t:'Scale drill', time:'15 MIN', d:'Take the current StudyBass scale shape. Play it up and down slowly with the metronome, one note per click. Say the note names as you go.'},
+      {t:'Fretboard drill', time:'5 MIN', d:'Pick one string. Say each natural note name out loud (E-F-G-A...) as you fret up the neck. E string one day, A string the next.'},
+      {t:'Backing-track play', time:'20 MIN', d:'Find a free YouTube backing track in a key you know. Play roots, then a simple line using your scale. Stay locked to the beat; don\'t stop for mistakes.'},
+      {t:'Ear day', time:'10 MIN', d:'Try to find a bassline by ear before looking up tab. New Order "Blue Monday" is the rite of passage and dead simple.'}
+    ],
+    week:[
+      {d:'Day 1', t:'Install GuitarTuna + Soundbrenner. Tune the bass. Learn the 4 open string names. Open StudyBass, start lesson 1.'},
+      {d:'Day 2', t:'Message 3 potential tutors. Tune + 15 min plucking at 60 BPM. Next StudyBass lesson (+ a YouTube demo of the technique).'},
+      {d:'Day 3', t:'Tune + plucking drill. Next 1-2 StudyBass lessons.'},
+      {d:'Day 4', t:'Book the tutor trial from whoever replied. Fretboard drill (E string). Keep moving through StudyBass.'},
+      {d:'Day 5', t:'Tune + first scale drill from StudyBass. Play it in time.'},
+      {d:'Weekend', t:'Longer session. Review the week, play roots over one backing track, note what to raise with the tutor.'}
+    ]
+  },
+  spanish:{
+    wo:'WO-02', title:'Spanish', tag:'LESSON',
+    goal:'Reach solid A1: introduce yourself, handle basic everyday exchanges (ordering, directions, small talk), understand slow simple speech. Get a tutor or class in place for speaking.',
+    method:'A free three-part self-study stack covering the three things that actually build a language (structure, vocabulary, listening), plus a human for speaking. Rated above any single paid app by serious learners. Pick Latin American Spanish unless you have a specific Spain reason.',
+    stack:[
+      {name:'Language Transfer — Complete Spanish', badge:'free', note:'The best free grammar/structure course that exists. A teacher walks a real student through WHY Spanish works. 90 short audio lessons. Start here day one. Your "understand it" pillar.'},
+      {name:'Anki', badge:'free', note:'Spaced-repetition flashcards for vocab. Load a "Spanish frequency 1000/2000" shared deck. 15 min/day. Open-source, data is yours, syncs across devices. Your "remember the words" pillar.'},
+      {name:'Dreaming Spanish (YouTube)', badge:'free', note:'Comprehensible input: a teacher speaks slowly with gestures so you understand before you can translate. Start at Superbeginner. Your "train your ear" pillar.'},
+      {name:'Cankaya Halk Egitim Merkezi — A1', badge:'primary', note:'Spanish A1 confirmed available. Cheap/subsidized government course. Good structured speaking option if the schedule fits.'},
+      {name:'italki', badge:'paid', note:'Pay-as-you-go online tutors, often ~$10/hr, no subscription. Book a community tutor for conversation once you have a small foundation (2-3 weeks in).'},
+      {name:'Duolingo', badge:'skip', note:'Fine as a low-effort streak-keeper on lazy days, but not your main method, it tops out low. A warm-up, not the meal.'}
+    ],
+    milestones:[
+      'Stack set up: Language Transfer installed, Anki with a frequency deck, Dreaming Spanish bookmarked',
+      'Numbers + greetings: count 1-20, say your name, ask how someone is, basic courtesy',
+      'First 100 words solid in Anki (recall, not just recognition)',
+      'Tutor/class in place: first speaking session done',
+      'Present tense: you understand how Spanish verbs conjugate in the present',
+      'Self-introduction: talk about yourself for 60 seconds (name, age, origin, what you do, what you like)',
+      'Survive a transaction: role-play ordering food / asking directions without switching to English',
+      'First 500 words in Anki + comfortably following Superbeginner videos'
+    ],
+    activities:[
+      {t:'Language Transfer', time:'15 MIN', d:'Next 1-2 lessons. Pause and answer OUT LOUD before the student does. The highest-value 15 min in the whole stack.'},
+      {t:'Anki review', time:'15 MIN', d:'Do your due cards. Add no more than 10-15 new cards/day or it snowballs. Say each word out loud.'},
+      {t:'Dreaming Spanish', time:'15 MIN', d:'One Superbeginner video. Don\'t translate in your head, follow meaning from context and gestures. Rewatch if lost.'},
+      {t:'Speaking rep', time:'5 MIN', d:'Narrate your day to yourself in Spanish out loud. Note the words you\'re missing and add them to Anki.'},
+      {t:'Numbers / greetings drill', time:'5 MIN', d:'Early on, drill counting and courtesy phrases until automatic.'},
+      {t:'Tutor session', time:'30-60 MIN', d:'Weekly. Speak only. Come with a topic. Ask them to correct you.'}
+    ],
+    week:[
+      {d:'Day 1', t:'Install Language Transfer, lessons 1-3. Install Anki, load a frequency deck. Bookmark Dreaming Spanish.'},
+      {d:'Day 2', t:'Language Transfer next 2. Anki 10 new + reviews. Learn numbers 1-10.'},
+      {d:'Day 3', t:'Language Transfer next 2. Anki. One Superbeginner video. Numbers 11-20.'},
+      {d:'Day 4', t:'Check Cankaya HEM A1 schedule OR browse italki tutors. Language Transfer + Anki.'},
+      {d:'Day 5', t:'Full stack. Practice saying your name + "encantado" + where you\'re from out loud.'},
+      {d:'Weekend', t:'Longer input: 2-3 Dreaming Spanish videos. Review the week\'s Anki. Book the tutor/class.'}
+    ]
+  },
+  dj:{
+    wo:'WO-06', title:'DJ / Prod', tag:'SKILL',
+    goal:'Two connected skills. (1) DJing: beatmatch and blend tracks you love. (2) Production: chop a sample and build a UK garage / 2-step track around it. End state: one short mix that includes an edit you made.',
+    method:'UK garage / 2-step as the genre anchor (where PinkPantheress lives, learnable fast, mostly stock Ableton sounds). Ableton Live as the software anchor: Session View for live blending, full sampling for production. Learn one DAW deeply.',
+    stack:[
+      {name:'Ableton Live', badge:'paid', note:'Start on the free trial (fully functional, TIME-LIMITED, don\'t start it until you\'re ready to use the weeks). The anchor. Learn it, don\'t app-hop.'},
+      {name:'Ableton Learning Music / Synths', badge:'free', note:'Interactive browser sites teaching rhythm/melody/synthesis from zero. Do these before opening the DAW if theory feels shaky.'},
+      {name:'UK garage sample pack', badge:'free', note:'Grab a free/cheap one (choppy pads, breakbeats, vocal chops, reese bass). Source material so you\'re not on a blank page.'},
+      {name:'Mixxx', badge:'free', note:'Full DJ software, open source, runs on your Mac. Learn beatmatching + EQ transitions here before spending a cent on gear.'},
+      {name:'Hardware (later only)', badge:'skip', note:'No controller yet. Only if it sticks: Pioneer DDJ-FLX4 (~$250) or DDJ-REV5. Software first.'},
+      {name:'YouTube: Digital DJ Tips + "UK garage in Ableton"', badge:'free', note:'DJ fundamentals from the first; genre production (e.g. Producer School\'s 1-hr build) from the second.'}
+    ],
+    milestones:[
+      'Mixxx installed, 8-10 of your tracks imported and BPM-analyzed',
+      'First manual beatmatch: two tracks\' tempos matched and held in sync',
+      'First clean EQ transition: blend A into B, cutting bass on the incoming track till you swap',
+      'Phrasing: transitions land on 8/16/32-bar boundaries, not randomly',
+      '10-minute DJ mix: 4-5 tracks blended, no train-wrecks',
+      'Ableton navigation: move around Session + Arrangement, load a drum rack, draw MIDI without a tutorial open',
+      'First sample chopped + warped: a 2-4 bar vocal/bassline snippet at a fixed tempo',
+      'First 2-step beat: kick on 1, snare on 2 & 4, shuffled hats, under your sample',
+      'First 16-bar loop: sample + drums + bass that grooves',
+      'CROSSOVER: your edit dropped into a short Mixxx mix between two commercial tracks'
+    ],
+    activities:[
+      {t:'Mixxx setup (once)', time:'20 MIN', d:'Install Mixxx. Import 8-10 tracks (Blur, New Order, LCD + some 4/4 dance). Analyze so it detects BPM.'},
+      {t:'Beatmatch drill', time:'30 MIN', d:'Two tracks, similar BPM. Get them in sync by adjusting tempo, by ear before trusting the sync button. Just hold it, don\'t transition yet.'},
+      {t:'EQ transition drill', time:'30 MIN', d:'Two synced tracks. Bring one in while cutting its bass, then swap the bass on the beat. Repeat the SAME transition 10x until smooth.'},
+      {t:'Phrasing session', time:'30 MIN', d:'Count bars out loud (1-2-3-4, 2-2-3-4...). Start a transition exactly on bar 1 of a new phrase.'},
+      {t:'Ableton basics', time:'30 MIN', d:'Follow one beginner Ableton video, recreate exactly what they do. Goal is interface fluency, not a finished track.'},
+      {t:'Chop drill', time:'30 MIN', d:'Import a track you love. Find a 2-4 bar section (vocal or bassline). Cut it, warp to project tempo, loop it. That\'s the whole task.'},
+      {t:'2-step drum drill', time:'30 MIN', d:'Program the garage pattern: kick on 1 (+ a syncopated second kick), snare/clap on 2 & 4, hats shuffled on 1/16s. Loop it, change the swing, listen.'},
+      {t:'Build session', time:'45-60 MIN', d:'Combine chopped sample + 2-step drums + bass into a 16-bar loop. Aim for one good loop, not a finished song.'}
+    ],
+    week:[
+      {d:'Wk 1-2', t:'Tools, not art. Install Mixxx + Ableton. Learn to navigate both. Ableton Learning Music site. No creative pressure.'},
+      {d:'Wk 3-4', t:'First moves. DJ: beatmatch + one clean EQ transition. Production: chop and loop your first sample.'},
+      {d:'Wk 5-6', t:'Crossover build. Take a bassline/vocal from a track you love, build 2-step drums + bass under it.'},
+      {d:'Wk 7-8', t:'Play it out. Put your edit into a 10-min mix alongside commercial tracks. Post a clip to r/DJs for feedback.'}
+    ]
+  },
+  gym:{
+    wo:'WO-05', title:'Gym', tag:'ROUTINE',
+    schedule:[1,2,4,5], // Mon Tue Thu Fri (getDay(): 0=Sun) — rest days don't nag and don't break the streak
+    goal:'Stop the on/off pattern. Run your 4-day Upper/Lower split consistently with double progression, so the numbers climb and you KNOW you\'re improving rather than guessing.',
+    method:'This is the program you already built (Jeff Nippard principles): a 4-day Upper/Lower split, quad day + posterior day + push + pull, ~10 weekly sets per major muscle. Double progression: hit the top of the rep range on every set of a lift, add weight next session. Consistency + progressive overload is the whole game.',
+    stack:[
+      {name:'Day A — Lower (Quad focus)', badge:'primary', note:'Squat (3-4×6-10) · Leg Extension (3×10-15) · Walking Lunge (3×10-15) · Standing Calf Raise (2-3×12-20) · Cable Crunch (2-3×12-20). Primary quad/glute compound first, then isolation.'},
+      {name:'Day B — Upper Push', badge:'primary', note:'Incline Bench Press (3-4×6-10) · Overhead Press (3-4×6-10) · Lateral Raise (3×10-15) · Machine Pec Deck (3×10-15) · Overhead Cable Triceps Ext (3×10-15) · Weighted Dips (optional if energy).'},
+      {name:'Day C — Lower (Posterior chain)', badge:'primary', note:'Romanian Deadlift (3-4×6-10) · Seated Leg Curl (3×10-15) · Glute Drive / Hip Thrust (3×10-15) · Standing Calf Raise (2-3×12-20, 2nd time this week) · Neck Curls & Ext (2-3×12-20) · DB Wrist Curls & Ext (finisher).'},
+      {name:'Day D — Upper Pull', badge:'primary', note:'Pull-Up (3-4×6-10) · Chest-Supported T-Bar Row (3-4×6-10) · Preacher Curl (3×10-15, heavier) · Bayesian Cable Curl (3×10-15, stretch) · Reverse Pec Deck (3×10-15) · DB Shrugs · Machine Lat Pullover (if available).'},
+      {name:'Rep logic', badge:'free', note:'Compounds 3-4×6-10 (heavier, strength-hypertrophy). Isolations 3×10-15 (moderate, feel the muscle). Small muscles (neck/forearms/calves/abs) 2-3×12-20.'},
+      {name:'The Log (your tracker)', badge:'free', note:'You already built a React workout tracker for this exact program, double-progression logic, rest timer, last-session-to-beat, saved between sessions. Use that in the gym to log sets. This tab is the reference; the tracker is the day-to-day tool.'}
+    ],
+    milestones:[
+      'Weekly schedule blocked on the calendar: Mon A · Tue B · Wed rest · Thu C · Fri D · weekend rest',
+      'The Log tracker open and ready on your phone for in-gym set logging',
+      'First full rotation done: A, B, C, D all completed once',
+      'Two full weeks completed without missing a scheduled day',
+      'First progression: hit the top of a rep range on all sets, added weight next session, logged it',
+      'Form locked on the four compounds (Squat, Incline Bench, RDL, Overhead Press)',
+      'Six-week mark: your main-lift numbers have visibly climbed from where you started',
+      'Consistency proven: 8 weeks in, showing up is a habit, not a daily decision'
+    ],
+    activities:[
+      {t:'Day A — Lower Quad', time:'60-75 MIN', d:'Squat → Leg Extension → Walking Lunge → Standing Calf Raise → Cable Crunch. Log every set in The Log. Rest ~3 min on Squat, ~1.5-2 on the rest.'},
+      {t:'Day B — Upper Push', time:'60-75 MIN', d:'Incline Bench → Overhead Press → Lateral Raise → Pec Deck → OH Triceps Ext → (Dips if energy). Leave 1-3 reps in the tank on compounds.'},
+      {t:'Day C — Lower Posterior', time:'60-75 MIN', d:'RDL → Seated Leg Curl → Glute Drive/Hip Thrust → Calf Raise → Neck Curls → Wrist Curls. RDL is a hinge, no lower-back rounding.'},
+      {t:'Day D — Upper Pull', time:'60-75 MIN', d:'Pull-Up → T-Bar Row → Preacher Curl → Bayesian Cable Curl → Reverse Pec Deck → Shrugs → Lat Pullover. Squeeze at the top of every pull.'},
+      {t:'Progression check', time:'1 MIN', d:'Any lift where you hit the TOP of the rep range on all sets last time → add the smallest increment today. The Log flags this for you automatically.'},
+      {t:'Form check (weekly)', time:'10 MIN', d:'Film one of the four compounds from the side. Compare to a reference video. Fix one thing.'},
+      {t:'Rest day', time:'—', d:'Wed + weekend. Actually rest, or light walking. Recovery is where the muscle is built. Don\'t add sessions to "catch up".'},
+      {t:'Non-negotiable', time:'DAILY', d:'Protein (~1.6-2.2g/kg bodyweight) and sleep, or the training doesn\'t stick. General guidance, not a diet prescription.'}
+    ],
+    week:[
+      {d:'Mon', t:'Day A — Lower (Quad focus). Squat-led. Log it in The Log.'},
+      {d:'Tue', t:'Day B — Upper Push. Incline bench + overhead press led.'},
+      {d:'Wed', t:'Rest. Light walking only.'},
+      {d:'Thu', t:'Day C — Lower (Posterior chain). RDL-led.'},
+      {d:'Fri', t:'Day D — Upper Pull. Pull-up + T-bar row led.'},
+      {d:'Sat/Sun', t:'Rest. Recover, eat, sleep. Come back Monday ready to beat last week\'s numbers.'}
+    ]
+  },
+  reading:{
+    wo:'WO-07', title:'Reading', tag:'HABIT',
+    goal:'Rebuild reading as a daily habit. The target isn\'t a book count or a genre, it\'s just becoming someone who reads most days again. Whatever you read counts.',
+    method:'The habit is the whole game, and the enemy is your phone. So this guide isn\'t about what to read, it\'s built around one thing: making the book easier to reach than the screen. Fixed time, fixed place, phone physically out of the room. Physical books only, because the object itself is the anti-phone.',
+    stack:[
+      {name:'A physical book you actually want to read', badge:'primary', note:'Not the book you think you SHOULD read. Momentum comes from wanting to turn the page. Pull from your own shelf, a flea-market find, whatever pulls you. Bilkent library and Ankara secondhand shops (Sahaf) are cheap sources.'},
+      {name:'The phone-parking rule', badge:'primary', note:'The single most important tool and it costs nothing. When you sit down to read, your phone goes in ANOTHER ROOM, on charge. Not face-down next to you, out of arm\'s reach. This one rule beats every reading app ever made.'},
+      {name:'A fixed slot + trigger', badge:'free', note:'Attach reading to something you already do daily so it rides an existing habit. Best two anchors: (1) in bed, phone charging across the room, read till you\'re sleepy, replaces the doomscroll that wrecks your sleep anyway. (2) With morning coffee before you touch the phone.'},
+      {name:'A bookmark + a visible spot', badge:'free', note:'Keep the current book where you\'ll trip over it, nightstand, coffee table, not on a shelf. Out of sight is out of the habit.'},
+      {name:'StoryGraph or a paper log', badge:'free', note:'Optional. Log what you finish if it motivates you (StoryGraph is the ad-free, indie alternative to Goodreads). But don\'t let tracking become another screen, the point is fewer screens.'},
+      {name:'The 50-page rule', badge:'free', note:'Give a book 50 pages. If it\'s a slog, DROP IT guilt-free and grab another. Forcing a boring book is the fastest way to kill the habit. Finishing every book is not the goal; reading most days is.'}
+    ],
+    milestones:[
+      'Phone-parking rule set: a spot in another room where the phone lives while you read',
+      'Current book chosen and sitting in its visible spot, not on a shelf',
+      'Fixed slot picked: bedtime or morning coffee, attached to an existing habit',
+      'First 3 days in a row of reading anything, even 5 pages',
+      'First full week: read on 5+ of 7 days',
+      'First book finished (or consciously dropped at page 50 and swapped)',
+      'Two weeks where reading beats the phone at your chosen slot',
+      'It\'s automatic: you reach for the book at your slot without deciding to'
+    ],
+    activities:[
+      {t:'Park the phone', time:'30 SEC', d:'Before you sit down: phone in the other room, on charge. This is the actual habit. The reading is almost the easy part once the phone is gone.'},
+      {t:'Bedtime read', time:'15-20 MIN', d:'In bed, phone across the room charging. Read till your eyes get heavy. This directly replaces the scroll that ruins your sleep. Best single slot for you.'},
+      {t:'Coffee read', time:'10-15 MIN', d:'Morning coffee, before you unlock your phone for the day. Even 10 minutes. Sets a screen-free tone before the day pulls you online.'},
+      {t:'Two-page minimum', time:'2 MIN', d:'On a rough day, commit to just 2 pages. Almost always you keep going, and if you don\'t, the streak survives. Never zero.'},
+      {t:'Swap check', time:'1 MIN', d:'Dreading picking the book up? You might be on the wrong one. Hit the 50-page rule, drop it, grab another. Boredom is a book problem, not a you problem.'},
+      {t:'Log it (optional)', time:'1 MIN', d:'Mark the day read, in StoryGraph or a paper streak. Only if it motivates, don\'t turn it into more screen time.'}
+    ],
+    week:[
+      {d:'Day 1', t:'Pick the spot where your phone will live during reading. Choose your current book, put it on the nightstand.'},
+      {d:'Day 2', t:'First bedtime read. Phone across the room. 15 min or till sleepy. Even a few pages counts.'},
+      {d:'Day 3', t:'Same slot, same phone rule. You\'re building the trigger, not the page count.'},
+      {d:'Day 4', t:'If the book\'s a slog, swap it now, don\'t wait. Otherwise keep going.'},
+      {d:'Day 5-7', t:'Hit the slot 5+ of 7 days. Notice the nights you read vs scrolled, how you feel/sleep. That contrast is what makes it stick.'}
+    ]
+  },
+  baking:{
+    wo:'WO-08', title:'Baking', tag:'PROJECT', project:true,
+    goal:'Progress a bit whenever you have time, not every day. No streak, no guilt on skipped days. The measure is bakes unlocked, not consistency. Get to where you can bake a handful of things well and understand WHY they work.',
+    method:'Project skill: one bake per session, done when you feel like it. Learn by baking variations of the same thing, second time you make cookies you start noticing why melted vs creamed butter changes everything. One reliable reference beats a pile of random internet recipes. Read the recipe a day ahead and treat each bake as a small plan, not an impulse (that\'s how you avoid the half-melted-butter disaster that kills the fun).',
+    stack:[
+      {name:'Sally\'s Baking Addiction (book + free site)', badge:'primary', note:'The foolproof beginner reference: 101 reliable recipes plus the why. The free website covers most of what you need to start; the book is worth it if you want one trusted source on the shelf. Start here.'},
+      {name:'A digital kitchen scale', badge:'primary', note:'The single highest-value tool. Baking is chemistry, ratios by weight beat cups every time and are the #1 reason home bakes fail or succeed. Cheap, non-negotiable.'},
+      {name:'The "bake it 3 ways" method', badge:'free', note:'When something interests you (say chocolate chip cookies), bake 2-3 different recipes for it over a few weeks. First time you follow along; by the third you see what stays constant vs what changes, and you\'re learning ratios instead of memorizing steps.'},
+      {name:'The Flavor Bible', badge:'free', note:'Later, not now. An encyclopedia of what pairs with what, for when you want to start improvising instead of following recipes. Reference, not a starting point.'},
+      {name:'NYT Cooking / Bon Appetit', badge:'free', note:'Dependable recipe sources with a huge beginner-to-advanced range once you outgrow the starter reference.'},
+      {name:'The read-ahead rule', badge:'free', note:'Choose the recipe at least a day ahead and read it all the way through once before starting. Softened butter, room-temp eggs, preheated oven, half of baking failures are just skipped prep.'}
+    ],
+    milestones:[
+      'Scale + a starter recipe picked. Read one recipe front to back before baking it',
+      'First bake done: something one-bowl and low-stakes (cookies, a snacking cake, brownies)',
+      'Baked the SAME thing a second, different way, noticed what changed',
+      'First thing involving proper technique: creaming butter, or a simple custard',
+      'First bread or anything yeasted (the patience tier)',
+      'First layer cake or multi-component bake (assembly, not just batter)',
+      'Improvised once: tweaked a recipe on purpose and it worked',
+      'Repertoire: 5 things you can bake well on demand'
+    ],
+    activities:[
+      {t:'Pick + prep a bake', time:'WHEN FREE', d:'Choose a recipe a day ahead. Read it fully. Check you have everything and that butter/eggs will be at the right temp. This 10 min prevents most disasters.'},
+      {t:'One-bowl starter bake', time:'~1 HR', d:'Snacking cake, brownies, or drop cookies. Minimal technique, high success rate. The point is finishing something good, not difficulty.'},
+      {t:'Bake-it-again', time:'~1 HR', d:'Remake something you\'ve done, but a different recipe or one variable changed. Note the difference in the result. This is where the actual learning happens.'},
+      {t:'Technique bake', time:'1-2 HR', d:'Pick a bake that forces one new skill: creaming, folding egg whites, a custard, laminating. One new technique per session, not five.'},
+      {t:'Yeast / patience bake', time:'HALF DAY', d:'Bread, focaccia, cinnamon rolls. Mostly waiting, not work. Do this on a slow day when you\'re home anyway.'},
+      {t:'Halve + freeze', time:'5 MIN', d:'Living alone, halve recipes or freeze extra dough in balls so you\'re not drowning in 24 cookies. Bake fresh from frozen whenever.'}
+    ],
+    week:[
+      {d:'Session 1', t:'Get a scale. Pick one one-bowl recipe from Sally\'s. Read it through the night before.'},
+      {d:'Session 2', t:'Bake it. Don\'t judge the result hard, just note what felt awkward.'},
+      {d:'Later', t:'Bake something in the same family a different way. Compare. This is the whole method.'},
+      {d:'Ongoing', t:'Add one new technique each time you feel like leveling up. No schedule, no pressure. Progress when you can.'}
+    ]
+  },
+  mixology:{
+    wo:'WO-09', title:'Mixology', tag:'PROJECT', project:true,
+    goal:'Progress a bit when the mood strikes, not daily. Build a small repertoire of cocktails you can make well and understand the templates behind them, so eventually you can improvise instead of following recipes.',
+    method:'Project skill, same as baking: learn when you feel like it, measured in drinks unlocked. The pros are unanimous: master a few core techniques (shake, stir, strain) and start with three-ingredient classics before anything elaborate. Learn the TEMPLATES (sour, old-fashioned, highball), not 200 recipes, once you know a sour is spirit + citrus + sweet, you can make dozens of drinks and invent your own.',
+    stack:[
+      {name:'A jigger + a Hawthorne strainer', badge:'primary', note:'The two tools that actually matter. Free-pouring is the #1 beginner mistake, a jigger (measured pour) fixes 90% of bad home cocktails instantly. Skip the shiny 12-piece kits; a good jigger and strainer beat a boxed set of thin junk.'},
+      {name:'A shaker (Boston tin or cobbler)', badge:'primary', note:'Whichever feels better in your hands. Plus a bar spoon for stirring and a cheap citrus juicer, fresh juice vs bottled is a bigger upgrade than any tool.'},
+      {name:'"Three-Ingredient Cocktails" (Robert Simonson)', badge:'primary', note:'The ideal beginner book: every drink is 3 ingredients + garnish. Strips away complexity and teaches how spirit, modifier, and sweetener interact. The Daiquiri, Old Fashioned, and Manhattan in their purest forms. Start here.'},
+      {name:'The Joy of Mixology (Gary Regan)', badge:'free', note:'The next step up: organizes drinks into families/templates so you understand how they relate. This is the book that turns recipes into intuition. Get it once the basics click.'},
+      {name:'Clear-ice tray + good ice', badge:'free', note:'The one "upgrade" that punches above its cost. Bigger/clearer ice dilutes slower and makes a home drink feel like a bar drink. More impact than another gadget.'},
+      {name:'Cocktail apps', badge:'skip', note:'Be wary. Many app/online recipes are user-generated and unreliable. A vetted book gives consistent results; apps are a coin flip early on.'}
+    ],
+    milestones:[
+      'Jigger + strainer + shaker acquired. You know the 3 core moves exist: shake, stir, strain',
+      'First stirred drink: an Old Fashioned or Manhattan (spirit-forward, stirred, not shaken)',
+      'First shaken sour: a Daiquiri or Whiskey Sour (spirit + citrus + sweet, always shaken)',
+      'You can taste-balance: fixed a drink that was too sour/sweet/strong by adjusting one part',
+      'Learned the template, not the recipe: you can name why a drink is a "sour" vs a "highball"',
+      'Built a small bar: enough to make 5+ different drinks from what you own',
+      'Improvised once: made a balanced drink without a recipe and it worked',
+      'Repertoire: 5 cocktails you can make well for someone else'
+    ],
+    activities:[
+      {t:'Learn one technique', time:'20 MIN', d:'Watch one video on shaking OR stirring OR straining, then do it with just water + ice until the motion feels natural. One technique per session.'},
+      {t:'Make one classic', time:'15 MIN', d:'Pick a 3-ingredient classic from Simonson. Measure everything with the jigger, no eyeballing. Make it exactly as written first.'},
+      {t:'Template drill', time:'20 MIN', d:'Make two drinks from the SAME family (e.g. Daiquiri then Whiskey Sour, both sours). Notice the shared skeleton: spirit + citrus + sweet. That\'s the lesson.'},
+      {t:'Balance practice', time:'15 MIN', d:'Make a drink slightly wrong on purpose (too sour), then fix it by adjusting one ingredient. Learning to taste and correct is the real skill.'},
+      {t:'Fresh-juice upgrade', time:'5 MIN', d:'Any citrus drink: squeeze it fresh instead of bottled. Taste the difference back to back once so you never go back.'},
+      {t:'House drink', time:'20 MIN', d:'Once templates click, try inventing one within a template you know. Even if it flops, that\'s where mixology actually starts.'}
+    ],
+    week:[
+      {d:'Session 1', t:'Get a jigger, Hawthorne strainer, shaker. Watch one video each on shake/stir/strain.'},
+      {d:'Session 2', t:'Make one stirred classic (Old Fashioned) measuring everything. Then one shaken (Daiquiri).'},
+      {d:'Later', t:'Make two drinks from the same family back to back. See the shared template.'},
+      {d:'Ongoing', t:'Add drinks when the mood strikes. Once you see the templates, start bending them. No schedule.'}
+    ]
+  },
+  sql:{
+    wo:'WO-10', title:'SQL / Career', tag:'CAREER',
+    goal:'Close the one gap between your CV and the analyst/data roles you\'re applying to. You already have the hard part (optimization, OR, modeling); what recruiters filter for and don\'t see from you is database querying. Finish a SQL course that outputs portfolio projects, not just a badge.',
+    method:'SQL is the highest-leverage career move for your specific profile: it appears in ~53% of data-analyst postings and is a first-pass ATS keyword, and it\'s the thing your CV doesn\'t already shout. The trap is chasing a logo, SQL gets tested live in interviews, so pick a course that produces demonstrable projects (write-and-explain-a-JOIN proof) over a pure multiple-choice exam. Do SQL first; add Power BI (PL-300) after only if you want extra brand signal. This compounds with your optimization strength: query fluently AND optimize, and you\'re differentiated, not just another applicant.',
+    stack:[
+      {name:'DataCamp — Associate Data Analyst in SQL (or Dataquest SQL path)', badge:'primary', note:'The pick. Builds a portfolio of real projects while teaching SQL hands-on, from basic querying through JOINs and window functions. Outputs a shareable certificate PLUS work samples. Finishable in ~2-3 months. This fills the exact gap on your CV.'},
+      {name:'Portfolio: 2-3 SQL projects on GitHub', badge:'primary', note:'The actual deliverable. A certificate is filler without work samples. Put 2-3 query projects (ideally on data you care about, ops/optimization-flavored) on your GitHub and link from your CV/LinkedIn. This is what beats other applicants in interviews.'},
+      {name:'Microsoft PL-300 (Power BI Data Analyst)', badge:'paid', note:'Stretch follow-on, AFTER SQL. Pairs SQL with Power BI, a combo many EU employers request, and it\'s a recognized ATS-friendly credential for analyst roles. More effort/cost. Only if you want the bigger brand name once the SQL foundation is solid.'},
+      {name:'Free practice: SQLBolt, Mode SQL Tutorial, LeetCode SQL', badge:'free', note:'Free hands-on drilling. SQLBolt/Mode for learning by doing; LeetCode\'s SQL questions to prep for the live interview tests (the JOIN/aggregation questions that actually get asked).'},
+      {name:'Tie it to your CV narrative', badge:'free', note:'Frame the new skill against what you have: "operations research + SQL" is a stronger story than either alone. Update the CV/LinkedIn skills + add the projects once done. Relevant to ENPower (IT track) and the EP Data Services roles specifically.'},
+      {name:'A generic "learn to code" bootcamp', badge:'skip', note:'Skip. You don\'t need a broad bootcamp, you have the engineering foundation. Narrow SQL focus is the efficient move; don\'t pay for months of stuff you already know.'}
+    ],
+    milestones:[
+      'Course picked and enrolled (DataCamp SQL or Dataquest). First module done',
+      'Core querying solid: SELECT, WHERE, ORDER BY, aggregations (COUNT/SUM/GROUP BY) without reference',
+      'JOINs locked: you can write and EXPLAIN an inner/left join out loud (the interview test)',
+      'Intermediate: subqueries, CTEs, window functions (ROW_NUMBER, RANK, running totals)',
+      'Course finished, certificate earned',
+      'First SQL portfolio project on GitHub, linked from CV/LinkedIn',
+      'Second and third projects up: enough to point a recruiter at real work',
+      'CV + LinkedIn updated: "OR + SQL" narrative, skills and projects live',
+      'Stretch: PL-300 started (only if pursuing the extra credential)'
+    ],
+    activities:[
+      {t:'Course module', time:'45 MIN', d:'Do the next DataCamp/Dataquest module. Don\'t just pass exercises, retype queries from scratch until they flow. Note anything you had to look up and re-drill it next session.'},
+      {t:'LeetCode SQL drill', time:'30 MIN', d:'One or two SQL questions on LeetCode (Easy → Medium). These mirror the live JOIN/aggregation questions asked in interviews. Explain your query out loud as if to an interviewer.'},
+      {t:'Write-and-explain', time:'15 MIN', d:'Take one query you wrote and explain each clause in plain English out loud. If you can\'t explain a JOIN, you don\'t own it yet. This is the exact interview test.'},
+      {t:'Portfolio build', time:'1-2 HR', d:'Grab a dataset you care about (ops, logistics, something optimization-flavored). Ask a real question, answer it in SQL, write up the query + finding in a GitHub README. One project = one clear question answered well.'},
+      {t:'Concept patch', time:'20 MIN', d:'Pick one weak spot (window functions, CTEs, having vs where) and drill only that with SQLBolt/Mode until it clicks. One concept per session.'},
+      {t:'CV/LinkedIn pass', time:'30 MIN', d:'Once projects exist: add SQL to skills, link the GitHub projects, and reframe the narrative as "operations research + SQL". Tie it to ENPower / EP Data Services keywords.'}
+    ],
+    week:[
+      {d:'Day 1', t:'Enrol in DataCamp SQL (or Dataquest). Do module 1. This is a finishable course, not an open-ended grind.'},
+      {d:'Day 2-4', t:'One module per session. Retype queries from scratch. Start LeetCode Easy SQL alongside.'},
+      {d:'Wk 2-3', t:'Hit JOINs and window functions. Begin your first portfolio project on a dataset you like.'},
+      {d:'Wk 4+', t:'Finish the course, get the cert, push 2-3 projects to GitHub, update CV/LinkedIn. Then decide on PL-300.'}
+    ]
+  }
+};
+
+const ADMIN = [
+  {key:'shoes', wo:'WO-03', t:'Shoes: drop at a cobbler'},
+  {key:'dental', wo:'WO-04', t:'Dental: book a checkup'}
+];
+
+const ORDER = ['today','overview','bass','spanish','dj','gym','reading','baking','mixology','sql'];
+const SKILL_KEYS = ORDER.filter(k=>k!=='overview'&&k!=='today');
+const DAILY_KEYS = SKILL_KEYS.filter(k=>!SKILLS[k].project && k!=='dj'); // streak-tracked, nag if skipped
+const FLEX_KEYS  = SKILL_KEYS.filter(k=>SKILLS[k].project || k==='dj'); // do-when-you-can, no nag
+let heroIdx = 0; // ephemeral: which priority item the Today hero is showing
+
+/* ---------- STATE ---------- */
+let state = {}; // per skill: {milestones:{i:true}, sessions:n, lastLogged:'YYYY-MM-DD'}
+let adminState = {};
+let activeTab = 'today';
+const errEl = document.getElementById('err');
+function showErr(){errEl.style.display='block';}
+// LOCAL date, not toISOString() (which is UTC and would flip the "day" at 3am
+// in Turkey — a bedtime session logged at 1am belongs to that evening's date).
+function today(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+/* ---------- STORAGE ABSTRACTION ----------
+   The original file only spoke to window.storage (the Claude.ai Artifacts API),
+   which is undefined in a normal browser, so opened standalone nothing persisted.
+   `store` picks a backend at runtime:
+     1. window.storage  — when running inside Claude.ai (unchanged behaviour)
+     2. localStorage    — standalone file:// or hosted (the real fix)
+     3. in-memory       — last resort so the UI never crashes; set() reports
+                          failure so the #err "won't persist" banner shows.
+   Key names (fm:*) and the JSON-string value format are preserved, so any data
+   already saved under either backend keeps working. get() returns {value} | null,
+   exactly the shape the existing callers expect. Everything resolves immediately
+   for localStorage, so the calling code's `await` stays valid. */
+const store = (function(){
+  const mem = {};
+  const hasWS = (function(){ try{ return !!(window.storage && typeof window.storage.get==='function' && typeof window.storage.set==='function'); }catch(e){ return false; } })();
+  const hasLS = (function(){ try{ const t='__fm_probe__'; window.localStorage.setItem(t,'1'); window.localStorage.removeItem(t); return true; }catch(e){ return false; } })();
+
+  if(hasWS){
+    return {
+      backend:'artifact',
+      async get(k){ try{ const r=await window.storage.get(k); return (r && typeof r.value!=='undefined' && r.value!==null) ? {value:r.value} : null; }catch(e){ return null; } },
+      async set(k,v){ try{ await window.storage.set(k,v); return true; }catch(e){ return false; } },
+      async del(k){ try{ if(typeof window.storage.delete==='function') await window.storage.delete(k); else await window.storage.set(k,''); return true; }catch(e){ return false; } },
+      async list(pre){ try{ if(typeof window.storage.list==='function'){ const ks=await window.storage.list(); return (ks||[]).map(x=>typeof x==='string'?x:(x&&(x.key||x.name))||'').filter(k=>k && (!pre||k.indexOf(pre)===0)); } }catch(e){} return null; }
+    };
+  }
+  if(hasLS){
+    return {
+      backend:'localStorage',
+      async get(k){ try{ const v=window.localStorage.getItem(k); return v===null?null:{value:v}; }catch(e){ return null; } },
+      async set(k,v){ try{ window.localStorage.setItem(k,v); return true; }catch(e){ return false; } },
+      async del(k){ try{ window.localStorage.removeItem(k); return true; }catch(e){ return false; } },
+      async list(pre){ try{ const out=[]; for(let i=0;i<window.localStorage.length;i++){ const k=window.localStorage.key(i); if(k && (!pre||k.indexOf(pre)===0)) out.push(k); } return out; }catch(e){ return []; } }
+    };
+  }
+  return {
+    backend:'memory',
+    async get(k){ return Object.prototype.hasOwnProperty.call(mem,k) ? {value:mem[k]} : null; },
+    async set(k,v){ mem[k]=v; return false; }, // false -> caller shows persistence warning
+    async del(k){ delete mem[k]; return true; },
+    async list(pre){ return Object.keys(mem).filter(k=>!pre||k.indexOf(pre)===0); }
+  };
+})();
+
+/* ---------- SCHEMA VERSION / MIGRATION ----------
+   fm:_meta stamps the saved data with a schema version so future format changes
+   can be migrated instead of corrupting old saves. */
+const SCHEMA_VERSION = 1;
+function migrate(meta){
+  // Migrations run in order on the stored meta.schemaVersion.
+  // v<1 -> v1: no structural change (per-skill field back-fill already happens
+  // defensively in loadState), so this is currently a no-op placeholder.
+  return meta;
+}
+async function ensureMeta(){
+  let meta = null;
+  const r = await store.get('fm:_meta');
+  if(r && r.value){ try{ meta = JSON.parse(r.value); }catch(e){ meta = null; } }
+  if(!meta || typeof meta!=='object') meta = {schemaVersion:0, created:today()};
+  meta = migrate(meta);
+  if(meta.schemaVersion !== SCHEMA_VERSION){ meta.schemaVersion = SCHEMA_VERSION; }
+  await store.set('fm:_meta', JSON.stringify(meta));
+  return meta;
+}
+async function patchMeta(patch){ // read-modify-write small fields (theme, lastExport)
+  let m = {};
+  try{ const r = await store.get('fm:_meta'); if(r && r.value) m = JSON.parse(r.value)||{}; }catch(e){}
+  Object.assign(m, patch);
+  await store.set('fm:_meta', JSON.stringify(m));
+  return m;
+}
+
+async function loadState(){
+  const meta = await ensureMeta();
+  themeDark = meta.theme==='dark';
+  applyTheme();
+  for(const key of ORDER){
+    if(key==='overview'||key==='today')continue;
+    state[key] = null;
+    try{
+      const r = await store.get('fm:'+key);
+      if(r && r.value) state[key] = JSON.parse(r.value);
+    }catch(e){/* none yet */}
+    if(!state[key]) state[key] = {milestones:{},sessions:0,lastLogged:null,log:[],notes:''};
+    // migrate older saved state
+    if(!state[key].log) state[key].log = [];
+    if(typeof state[key].notes !== 'string') state[key].notes = '';
+    if(state[key].sessions==null) state[key].sessions = 0;
+  }
+  adminState = {};
+  try{
+    const a = await store.get('fm:admin');
+    if(a && a.value) adminState = JSON.parse(a.value);
+  }catch(e){/* none yet */}
+  render();
+  updateBackupNudge();
+}
+async function saveSkill(key){
+  const ok = await store.set('fm:'+key, JSON.stringify(state[key]));
+  if(!ok) showErr();
+}
+async function saveAdmin(){
+  const ok = await store.set('fm:admin', JSON.stringify(adminState));
+  if(!ok) showErr();
+}
+
+/* ---------- HELPERS ---------- */
+function addDays(iso,n){const d=new Date(iso+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function dayDiff(a,b){return Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/86400000);}
+function formatWhen(iso){
+  if(!iso) return '';
+  const d = dayDiff(iso,today());
+  if(d<=0) return 'today';
+  if(d===1) return 'yesterday';
+  return d+'d ago';
+}
+function logDates(key){return new Set(state[key] && state[key].log ? state[key].log : []);}
+/* Schedule support: a skill may declare schedule:[weekdays] (gym's 4-day split).
+   On non-scheduled days it isn't due — no nag, no at-risk, and the streak chain
+   walks scheduled days only, so Wednesday can't break a Mon-Tue-Thu-Fri streak. */
+function schedOf(key){const s=SKILLS[key]&&SKILLS[key].schedule;return (s&&s.length)?s:null;}
+function isDue(key,iso){const s=schedOf(key);if(!s)return true;return s.includes(new Date(iso+'T12:00:00').getDay());}
+function prevDue(key,iso){
+  let d=addDays(iso,-1);
+  if(!schedOf(key)) return d;
+  let guard=8; // a schedule always has a day within a week
+  while(!isDue(key,d)&&guard--) d=addDays(d,-1);
+  return d;
+}
+function computeStreak(key){
+  const set = logDates(key);
+  if(set.size===0) return {current:0,best:0};
+  const sched = schedOf(key);
+  // best: consecutive DUE days logged (off-schedule bonus logs neither break nor extend)
+  const dates = [...set].filter(d=>isDue(key,d)).sort();
+  let best=dates.length?1:0, run=1;
+  for(let i=1;i<dates.length;i++){
+    const consec = sched ? (prevDue(key,dates[i])===dates[i-1]) : (dayDiff(dates[i-1],dates[i])===1);
+    if(consec){run++; if(run>best)best=run;} else run=1;
+  }
+  // current: anchor on today if due + logged, else the most recent due day
+  // (grace: the streak doesn't break just because today isn't logged yet)
+  let cur=0, d=today();
+  if(!(isDue(key,d)&&set.has(d))) d=prevDue(key,d);
+  if(set.has(d)&&isDue(key,d)){ cur=1; let p=prevDue(key,d); while(set.has(p)){cur++; p=prevDue(key,p);} }
+  return {current:cur, best:Math.max(best,cur)};
+}
+function weeklyPulse(){
+  let sessions=0, prev=0; const skills=new Set();
+  ORDER.forEach(key=>{
+    if(key==='overview'||key==='today')return;
+    (state[key].log||[]).forEach(dt=>{
+      const diff=dayDiff(dt,today());
+      if(diff>=0 && diff<=6){sessions++; skills.add(key);}
+      else if(diff>=7 && diff<=13){prev++;} // same 7-day window, one week back
+    });
+  });
+  return {sessions, skills:skills.size, prev};
+}
+function streaksAtRisk(){
+  // one source of truth with the Today tab (isRiskKey is schedule-aware)
+  return DAILY_KEYS.filter(isRiskKey).map(key=>({key,title:SKILLS[key].title,n:computeStreak(key).current}));
+}
+
+function skillProgress(key){
+  const s = SKILLS[key]; if(!s.milestones) return {done:0,total:0};
+  const total = s.milestones.length;
+  let done = 0;
+  for(let i=0;i<total;i++) if(state[key] && state[key].milestones[i]) done++;
+  return {done,total};
+}
+function badgeHTML(b){
+  if(b==='free') return '<span class="badge free">FREE</span>';
+  if(b==='paid') return '<span class="badge paid">PAID</span>';
+  if(b==='primary') return '<span class="badge free" style="color:var(--rust);border-color:var(--rust)">START HERE</span>';
+  if(b==='skip') return '<span class="badge skipb">SKIP</span>';
+  return '';
+}
+
+/* ---------- RENDER ---------- */
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  ORDER.forEach(key=>{
+    const s = SKILLS[key];
+    const p = skillProgress(key);
+    const complete = p.total>0 && p.done===p.total;
+    const btn = document.createElement('button');
+    btn.className = 'tab'+(key===activeTab?' active':'')+(complete?' complete':'');
+    btn.innerHTML = `<span class="wo">${s.wo}</span>${s.title}<span class="ring"></span>`;
+    btn.onclick = ()=>{activeTab=key;render();window.scrollTo({top:0,behavior:'smooth'});};
+    el.appendChild(btn);
+  });
+}
+
+function renderContent(){
+  const el = document.getElementById('content');
+  if(activeTab==='today'){ renderToday(); return; }
+  if(activeTab==='overview'){ el.innerHTML = overviewHTML(); bindOverview(); return; }
+  const key = activeTab, s = SKILLS[key];
+  const p = skillProgress(key);
+  const pct = p.total? Math.round(p.done/p.total*100):0;
+  const st = state[key];
+  const loggedToday = st.lastLogged===today();
+
+  let html = `
+    <section class="active">
+      <div class="goal">
+        <div class="lbl">${s.wo} · OBJECTIVE</div>
+        <p>${s.goal}</p>
+        <p class="method">${s.method}</p>
+      </div>
+
+      <div class="logger">
+        <div class="logger-row">
+          <div class="logger-stat"><b>${st.sessions}</b>sessions logged${st.lastLogged?` · last ${formatWhen(st.lastLogged)}`:''}</div>
+          <button class="logbtn" data-log="${key}">${loggedToday?'+ Another':'Log a session'}</button>
+        </div>
+        ${loggedToday?'<div class="logged-today">Logged today. Nice.</div>':''}
+        ${streakChips(key,s)}
+        ${dotStrip(key)}
+        ${st.sessions>0?`<button class="undo" data-undo="${key}">undo last log</button>`:''}
+      </div>
+
+      <div class="block-title">Milestones</div>
+      <div class="prog"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><div class="prog-num">${p.done}/${p.total}</div></div>
+      <div class="checks" id="ms-${key}">`;
+
+  s.milestones.forEach((m,i)=>{
+    const done = st.milestones[i];
+    html += `<div class="check${done?' done':''}" data-ms="${i}" tabindex="0" role="checkbox" aria-checked="${!!done}">
+      <div class="box">${CHECK_SVG}</div><div class="ctext">${m}</div><div class="cstamp">DONE</div></div>`;
+  });
+
+  html += `</div>
+      <div class="block-title teal">The Stack</div>
+      <div class="stack">`;
+  s.stack.forEach(r=>{
+    html += `<div class="res${r.badge==='skip'?' skip':''}">
+      <div><span class="rname">${r.name}</span>${badgeHTML(r.badge)}</div>
+      <div class="rnote">${r.note}</div></div>`;
+  });
+
+  html += `</div>
+      <div class="block-title">${s.project?'Sessions (do when you have time)':'Daily Activities'}</div>
+      <div class="acts" id="acts-${key}">`;
+  s.activities.forEach((a,i)=>{
+    html += `<div class="act" data-act="${i}" tabindex="0">
+      <div class="act-head"><div class="act-title">${a.t}</div><div class="act-time">${a.time}</div></div>
+      <div class="act-desc">${a.d}</div></div>`;
+  });
+
+  const weekLabel = key==='dj' ? '8-Week Arc' : (s.project ? 'The Path' : 'First Week');
+  html += `</div>
+      <div class="block-title teal">${weekLabel}</div>
+      <div class="week">`;
+  s.week.forEach(w=>{
+    html += `<div class="wday"><div class="d">${w.d}</div><div>${w.t}</div></div>`;
+  });
+  html += `</div>
+      <div class="block-title">Log / Notes</div>
+      <div class="notes-box">
+        <textarea class="notes" id="notes-${key}" placeholder="Quick log after a session: what you practiced, what clicked, what to fix next time...">${escapeHTML(st.notes||'')}</textarea>
+        <div class="notes-saved" id="saved-${key}"></div>
+      </div>
+    </section>`;
+
+  el.innerHTML = html;
+  bindSkill(key);
+}
+
+function streakChips(key,s){
+  if(s.project) return ''; // project-pace skills deliberately aren't streak-based
+  const st = computeStreak(key);
+  if(st.current===0 && st.best===0) return '';
+  const hot = st.current>=2 ? ' hot' : '';
+  return `<div class="streak">
+    <div class="stat-chip${hot}"><b>${st.current}</b> day streak</div>
+    <div class="stat-chip">best <b>${st.best}</b></div>
+  </div>`;
+}
+function dotStrip(key){
+  const set = logDates(key);
+  const N = 14;
+  let dots='';
+  for(let i=N-1;i>=0;i--){
+    const dt = addDays(today(),-i);
+    const on = set.has(dt);
+    const isToday = i===0;
+    dots += `<div class="dot${on?' on':''}${isToday?' today':''}" data-day="${dt}" title="${dt} — tap to toggle"></div>`;
+  }
+  return `<div class="dots-wrap"><div class="dots-lbl">LAST 14 DAYS · TAP A DAY TO FIX IT</div><div class="dots">${dots}</div></div>`;
+}
+// Tap a dot to fix history: turning a day OFF removes all of that day's entries;
+// turning it ON adds one session. lastLogged is recomputed as the latest date.
+function toggleDay(key,dt){
+  const log = state[key].log || (state[key].log=[]);
+  const n = log.filter(x=>x===dt).length;
+  if(n>0){ state[key].log = log.filter(x=>x!==dt); state[key].sessions = Math.max(0, state[key].sessions-n); }
+  else { log.push(dt); state[key].sessions++; }
+  const L = state[key].log;
+  state[key].lastLogged = L.length ? L.slice().sort()[L.length-1] : null;
+  saveSkill(key); render();
+}
+function escapeHTML(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function overviewHTML(){
+  let rows = '';
+  ORDER.forEach(key=>{
+    if(key==='overview'||key==='today')return;
+    const s = SKILLS[key], p = skillProgress(key);
+    rows += `<div class="orow" data-goto="${key}">
+      <div class="owo">${s.wo}</div>
+      <div class="obody"><div class="oname">${s.title}</div><div class="odesc">${s.stackline||methodLine(key)}</div></div>
+      <div class="omini">${p.done}/${p.total}</div>
+    </div>`;
+  });
+  let admin = '<div class="admin">';
+  ADMIN.forEach(a=>{
+    const done = adminState[a.key];
+    admin += `<div class="check${done?' done':''}" data-admin="${a.key}" tabindex="0" role="checkbox" aria-checked="${!!done}">
+      <div class="box">${CHECK_SVG}</div><div class="ctext"><b style="font-family:var(--font-head);color:var(--rust);font-size:11px">${a.wo}</b><br>${a.t}</div><div class="cstamp">DONE</div></div>`;
+  });
+  admin += '</div>';
+
+  return `<section class="active">
+    <div class="goal">
+      <div class="lbl">FIELD MANUAL</div>
+      <p>Seven skills across two speeds, plus two admin one-offs. Each maps to a work order. Tap any project to open its guide, it tells you exactly which app to open and what to do.</p>
+    </div>
+    ${pulseHTML()}
+    <div class="block-title">The Projects</div>
+    <div class="otable">${rows}</div>
+    <div class="block-title teal">Admin (one-offs)</div>
+    ${admin}
+    <div class="callout"><b>Start-here order.</b> Don't launch everything at once, that's how it all stalls. <b>Day 1-2:</b> Gym + Bass (Gym is ready to run now, your program's already built; Bass tutor search has lead time, so message people early). <b>Day 3-4:</b> Spanish (free stack, 20 min to set up). <b>Day 5+:</b> DJ/Production (needs a real block, don't start the Ableton trial until you're ready). <b>Reading</b> can start tonight, it rides your existing bedtime, no setup beyond parking the phone.</div>
+    <div class="callout"><b>Two speeds.</b> Bass, Spanish, Gym, Reading and SQL are <b>daily-grind</b> skills, small reps most days, tracked by streak (SQL is a finishable course, so grind it then it's done). Baking and Mixology (WO-08/09) are <b>project-pace</b>, tagged PROJECT: no streak, no guilt, you do one session when you have the time and tick off what you unlock. Don't treat them the same or the projects will feel like chores.</div>
+    <div class="callout"><b>The one rule.</b> One course / one stack per skill, run consistently, logged. The failure mode isn't picking the wrong method, it's app-hopping and starting over. Let the streaks and session counts show you which skill is quietly not happening.</div>
+  </section>`;
+}
+function pulseHTML(){
+  const p = weeklyPulse();
+  const risk = streaksAtRisk();
+  let riskHTML='';
+  if(risk.length){
+    const names = risk.map(r=>`${r.title} (${r.n})`).join(', ');
+    riskHTML = `<div class="pulse-risk"><b>Streak at risk:</b> ${names}. Logged last time, not today — log a session to keep it alive.</div>`;
+  }
+  const delta = p.sessions - p.prev;
+  return `<div class="pulse">
+    <div class="pulse-lbl">THIS WEEK</div>
+    <div class="pulse-row">
+      <div class="pulse-stat"><b>${p.sessions}</b><span>sessions</span></div>
+      <div class="pulse-stat"><b>${p.skills}/${SKILL_KEYS.length}</b><span>skills touched</span></div>
+      <div class="pulse-stat"><b>${delta>0?'+':''}${delta}</b><span>vs last wk</span></div>
+    </div>
+    ${riskHTML}
+  </div>`;
+}
+function methodLine(key){
+  const lines = {
+    bass:'StudyBass (free) + a tutor. Work the lessons, YouTube for technique.',
+    spanish:'Language Transfer + Anki + Dreaming Spanish, free. Tutor for speaking.',
+    dj:'Ableton + Mixxx. UK garage as the frame. Learn tools first.',
+    gym:'Your 4-day Upper/Lower split. Double progression. Log every set in The Log.',
+    reading:'Beat the phone. Physical book, fixed slot, phone in another room.',
+    baking:'Project pace. One bake when free. Learn ratios by baking it 3 ways.',
+    mixology:'Project pace. Learn templates not recipes. Jigger + 3-ingredient classics.',
+    sql:'Career move. Finish a SQL course, ship portfolio projects. Fills your CV gap.'
+  };
+  return lines[key]||'';
+}
+
+/* ---------- BIND ---------- */
+function logSession(key){
+  state[key].sessions++;
+  state[key].lastLogged=today();
+  state[key].log = state[key].log || [];
+  state[key].log.push(today());
+  saveSkill(key); render();
+}
+function undoSession(key){
+  if(state[key].sessions>0) state[key].sessions--;
+  const log = state[key].log || [];
+  if(log.length){ log.pop(); state[key].lastLogged = log.length ? log[log.length-1] : null; }
+  saveSkill(key); render();
+}
+// Today-tab undo: specifically pull today's log entry back out (used when a row
+// or the hero was tapped by mistake). Removes one of today's dates, not just the
+// tail, so it stays correct even if an earlier date was somehow appended after.
+function undoTodayLog(key){
+  const log = state[key].log || [];
+  const idx = log.lastIndexOf(today());
+  if(idx<0) return; // nothing logged today to undo
+  log.splice(idx,1);
+  if(state[key].sessions>0) state[key].sessions--;
+  state[key].lastLogged = log.length ? log[log.length-1] : null;
+  saveSkill(key); render();
+}
+function bindSkill(key){
+  document.querySelectorAll(`#ms-${key} .check`).forEach(row=>{
+    const i = +row.dataset.ms;
+    const toggle=()=>{
+      state[key].milestones[i]=!state[key].milestones[i];
+      if(!state[key].milestones[i]) delete state[key].milestones[i];
+      saveSkill(key); render();
+    };
+    row.onclick=toggle;
+    row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}};
+  });
+  document.querySelectorAll(`#acts-${key} .act`).forEach(a=>{
+    const toggle=()=>a.classList.toggle('open');
+    a.onclick=toggle;
+    a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}};
+  });
+  const logBtn = document.querySelector(`[data-log="${key}"]`);
+  if(logBtn) logBtn.onclick=()=>logSession(key);
+  const undoBtn = document.querySelector(`[data-undo="${key}"]`);
+  if(undoBtn) undoBtn.onclick=()=>undoSession(key);
+  document.querySelectorAll('.dots .dot').forEach(d=>{
+    d.onclick=()=>toggleDay(key, d.dataset.day);
+  });
+  const notesEl = document.getElementById(`notes-${key}`);
+  if(notesEl){
+    const savedEl = document.getElementById(`saved-${key}`);
+    const persist=()=>{
+      state[key].notes = notesEl.value;
+      saveSkill(key); // no render, keep focus
+      if(savedEl){savedEl.textContent='saved'; savedEl.style.opacity='1';
+        clearTimeout(notesEl._fade); notesEl._fade=setTimeout(()=>{savedEl.style.opacity='0';},1400);}
+    };
+    notesEl.addEventListener('input',()=>{clearTimeout(notesEl._t); notesEl._t=setTimeout(persist,600);});
+    notesEl.addEventListener('blur',persist);
+  }
+}
+function bindOverview(){
+  document.querySelectorAll('.orow').forEach(r=>{
+    r.onclick=()=>{activeTab=r.dataset.goto;render();window.scrollTo({top:0,behavior:'smooth'});};
+  });
+  document.querySelectorAll('[data-admin]').forEach(row=>{
+    const k = row.dataset.admin;
+    const toggle=()=>{adminState[k]=!adminState[k]; if(!adminState[k])delete adminState[k]; saveAdmin(); render();};
+    row.onclick=toggle;
+    row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}};
+  });
+}
+
+/* ---------- TODAY ---------- */
+function dayOfYear(){ const d=new Date(); return Math.floor((d-new Date(d.getFullYear(),0,0))/86400000); }
+function nextMilestone(key){
+  const ms = SKILLS[key].milestones||[];
+  for(let i=0;i<ms.length;i++){ if(!state[key].milestones[i]) return {text:ms[i],index:i}; }
+  return null;
+}
+function suggestedActivity(key){
+  const acts = SKILLS[key].activities||[];
+  if(!acts.length) return null;
+  return acts[dayOfYear()%acts.length];
+}
+function last7Count(key){ return (state[key].log||[]).filter(dt=>{const df=dayDiff(dt,today());return df>=0&&df<=6;}).length; }
+function isRiskKey(key){
+  if(!DAILY_KEYS.includes(key)) return false;
+  if(!isDue(key,today())) return false;          // rest day: nothing to protect yet
+  const set=logDates(key);
+  return set.has(prevDue(key,today())) && !set.has(today()) && computeStreak(key).current>=1;
+}
+function heroPriority(){
+  const risk=[], todo=[];
+  DAILY_KEYS.forEach(k=>{
+    if(!isDue(k,today())) return;                // rest day (gym Wed/weekend), no nag
+    if(logDates(k).has(today())) return;         // already done today, no nag
+    if(isRiskKey(k)) risk.push(k); else todo.push(k);
+  });
+  todo.sort((a,b)=>last7Count(a)-last7Count(b));  // most neglected first
+  const flexPending = FLEX_KEYS.filter(k=>nextMilestone(k)); // still has milestones to hit
+  return [...risk, ...todo, ...flexPending];
+}
+function renderToday(){
+  const el = document.getElementById('content');
+  const dueToday = DAILY_KEYS.filter(k=>isDue(k,today())); // gym drops out on rest days
+  const doneDaily = dueToday.filter(k=>logDates(k).has(today())).length;
+  const alive = DAILY_KEYS.filter(k=>computeStreak(k).current>=1).length;
+  const wk = weeklyPulse().sessions;
+
+  let html = `<section class="active">
+    <div class="tpulse"><b>${doneDaily}/${dueToday.length}</b> daily done today · <b>${alive}</b> streak${alive===1?'':'s'} alive · <b>${wk}</b> session${wk===1?'':'s'} this week</div>`;
+
+  const pri = heroPriority();
+  if(pri.length===0){
+    html += `<div class="hero-allclear">Everything's logged today.<br>Go live your life.</div>`;
+  } else {
+    const key = pri[heroIdx % pri.length];
+    const s = SKILLS[key];
+    const risk = isRiskKey(key);
+    const flex = FLEX_KEYS.includes(key);
+    const lbl = risk ? 'PROTECT YOUR STREAK' : (flex ? 'IF YOU HAVE TIME' : 'DO ONE NOW');
+    const lblClass = risk ? 'risk' : (flex ? 'bonus' : '');
+    const ms = nextMilestone(key);
+    const act = suggestedActivity(key);
+    const doneToday = logDates(key).has(today());
+    html += `<div class="hero">
+      <div class="hero-lbl ${lblClass}">${lbl}</div>
+      <div class="hero-skill">${s.title} <span class="wo">${s.wo}</span></div>
+      <div class="hero-ms">Working toward: <b>${ms?ms.text:'all milestones done ✓'}</b></div>
+      ${act?`<div class="hero-act"><span class="at">${act.t}</span><span class="atime">${act.time}</span><br>${act.d}</div>`:''}
+      <div class="hero-btns">
+        <button class="primary" data-tlog="${key}">Log it${doneToday?' again':''}</button>
+        ${doneToday?`<button class="ghost" data-tundo="${key}">undo</button>`:''}
+        <button class="ghost" data-tnext>show another</button>
+        <button class="ghost" data-tgo="${key}">open →</button>
+      </div>
+    </div>`;
+  }
+
+  html += `<div class="tgroup-lbl">Daily grind</div>`;
+  DAILY_KEYS.forEach(k=>{ html += trowHTML(k); });
+  html += `<div class="tgroup-lbl flex">When you have time</div>`;
+  FLEX_KEYS.forEach(k=>{ html += trowHTML(k); });
+
+  html += `<div style="margin-top:16px;font-size:11px;color:var(--ink-soft);letter-spacing:.03em;line-height:1.5">Tap any row to open its full guide, milestones, resources and notes live there. This tab just tells you what to do next.</div>`;
+  html += `</section>`;
+  el.innerHTML = html;
+  bindToday();
+}
+function trowHTML(k){
+  const s = SKILLS[k];
+  const flex = FLEX_KEYS.includes(k);
+  const done = !flex && logDates(k).has(today());
+  const rest = !flex && !done && !isDue(k,today()); // scheduled skill on an off day
+  const st = computeStreak(k);
+  const ms = nextMilestone(k);
+  const streakTxt = (!flex && st.current>=1) ? `<span class="tstreak">${st.current}d</span>` : '';
+  const restTxt = rest ? '<span class="trest">REST DAY</span>' : '';
+  const nextTxt = ms ? `next: ${ms.text}` : 'all milestones done ✓';
+  return `<div class="trow${done?' done':''}" data-tgo="${k}">
+    <div class="tdot${flex?' flex':''}"></div>
+    <div class="tbody"><div class="tname">${s.title}${streakTxt}${restTxt}</div><div class="tnext">${nextTxt}</div></div>
+    <button class="tlog${done?' done':''}" data-${done?'tundo':'tlog'}="${k}" title="${done?'Tap to undo today\'s log':'Log a session'}">${done?'✓ done':'log'}</button>
+  </div>`;
+}
+function bindToday(){
+  document.querySelectorAll('[data-tlog]').forEach(b=>{
+    b.onclick=e=>{ e.stopPropagation(); heroIdx=0; logSession(b.dataset.tlog); };
+  });
+  document.querySelectorAll('[data-tundo]').forEach(b=>{
+    b.onclick=e=>{ e.stopPropagation(); heroIdx=0; undoTodayLog(b.dataset.tundo); };
+  });
+  const nx = document.querySelector('[data-tnext]');
+  if(nx) nx.onclick=e=>{ e.stopPropagation(); heroIdx++; render(); };
+  document.querySelectorAll('[data-tgo]').forEach(r=>{
+    r.onclick=()=>{ activeTab=r.dataset.tgo; render(); window.scrollTo({top:0,behavior:'smooth'}); };
+  });
+}
+
+function render(){ renderTabs(); renderContent(); }
+
+/* ---------- DATA: EXPORT / IMPORT (cross-device bridge + backup) ----------
+   localStorage is per-device/per-browser, so a phone and a PC never share
+   automatically. Export writes every fm:* record to a JSON file; Import reads a
+   file (or pasted text), confirms, restores, and re-renders. This is also the
+   migration path off the Claude.ai version: export there, import here. */
+async function allKeys(){
+  const listed = await store.list('fm:');
+  if(listed && listed.length) return listed;
+  // Backend can't enumerate (e.g. window.storage has no list()): use known keys.
+  const ks = SKILL_KEYS.map(k=>'fm:'+k);
+  ks.push('fm:admin','fm:_meta');
+  return ks;
+}
+function dataMsg(txt,warn){
+  const el = document.getElementById('datamsg');
+  if(!el) return;
+  el.textContent = txt;
+  el.style.color = warn ? 'var(--skip)' : 'var(--teal)';
+  el.style.opacity = '1';
+  clearTimeout(dataMsg._t);
+  dataMsg._t = setTimeout(()=>{ el.style.opacity='0'; }, 3200);
+}
+async function exportData(){
+  try{
+    const keys = await allKeys();
+    const data = {};
+    for(const k of keys){ const r = await store.get(k); if(r && r.value!=null) data[k] = r.value; }
+    const payload = {app:'summer-field-manual', schema:SCHEMA_VERSION, exportedAt:new Date().toISOString(), data};
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'field-manual-backup-'+today()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    dataMsg('Exported '+Object.keys(data).length+' records ✓');
+    await patchMeta({lastExport:today()});
+    updateBackupNudge();
+  }catch(e){ dataMsg('Export failed on this device', true); }
+}
+async function importData(text){
+  let payload;
+  try{ payload = JSON.parse(text); }
+  catch(e){ dataMsg("That wasn't valid JSON", true); return; }
+  // Accept our wrapped {app,schema,data:{...}} form or a raw {fm:...} object.
+  const data = (payload && payload.data && typeof payload.data==='object') ? payload.data : payload;
+  const keys = Object.keys(data||{}).filter(k=>k.indexOf('fm:')===0);
+  if(!keys.length){ dataMsg('No fm:* data found in that file', true); return; }
+  if(!window.confirm('Import '+keys.length+' record(s)?\n\nThis OVERWRITES the current data on this device.')) return;
+  let ok = true;
+  for(const k of keys){
+    let v = data[k];
+    if(typeof v !== 'string') v = JSON.stringify(v); // tolerate object-valued entries
+    const r = await store.set(k, v);
+    if(!r) ok = false;
+  }
+  await loadState(); // reloads from storage + re-renders everything
+  if(!ok){ showErr(); dataMsg('Imported, but saving failed', true); }
+  else dataMsg('Imported '+keys.length+' records ✓');
+}
+function bindData(){
+  const ex = document.getElementById('btnExport');
+  const im = document.getElementById('btnImport');
+  const pa = document.getElementById('btnPaste');
+  const file = document.getElementById('importFile');
+  if(ex) ex.onclick = exportData;
+  if(im && file){
+    im.onclick = ()=>file.click();
+    file.onchange = ()=>{
+      const f = file.files && file.files[0];
+      if(!f) return;
+      const rd = new FileReader();
+      rd.onload = ()=>{ importData(String(rd.result)); file.value=''; };
+      rd.onerror = ()=>{ dataMsg("Couldn't read that file", true); file.value=''; };
+      rd.readAsText(f);
+    };
+  }
+  if(pa) pa.onclick = ()=>{ const t = window.prompt('Paste your backup JSON here:'); if(t) importData(t); };
+}
+/* Quiet reminder in the Data row: localStorage can be evicted by the browser,
+   so if there's real progress and no export in 14+ days, say so. */
+async function updateBackupNudge(){
+  const el = document.getElementById('backupNudge');
+  if(!el) return;
+  const any = SKILL_KEYS.some(k=>{
+    const s = state[k];
+    return s && (s.sessions>0 || Object.keys(s.milestones||{}).length>0 || (s.notes||'').length>0);
+  });
+  if(!any){ el.textContent=''; return; }
+  let meta = {};
+  try{ const r = await store.get('fm:_meta'); if(r && r.value) meta = JSON.parse(r.value)||{}; }catch(e){}
+  if(!meta.lastExport){ el.textContent = 'no backup yet — export a copy sometime'; return; }
+  const d = dayDiff(meta.lastExport, today());
+  el.textContent = d>14 ? ('last backup '+d+'d ago — export a fresh copy') : '';
+}
+
+/* ---------- THEME (persisted bedtime toggle) ---------- */
+let themeDark = false;
+function applyTheme(){
+  document.documentElement.dataset.theme = themeDark ? 'dark' : '';
+  const b = document.getElementById('themeToggle');
+  if(b) b.textContent = themeDark ? '☀' : '☾';
+  const m = document.querySelector('meta[name="theme-color"]');
+  if(m) m.content = themeDark ? '#1B1D1A' : '#EAE6DC';
+}
+async function toggleTheme(){
+  themeDark = !themeDark;
+  applyTheme();
+  await patchMeta({theme: themeDark ? 'dark' : 'light'});
+}
+
+/* ---------- INSTALLABLE APP (icons + web manifest) ----------
+   Icons are drawn on a canvas at runtime and injected as data URIs, so there are
+   no external image files — the whole app stays one .html. The apple-touch-icon +
+   apple-mobile-web-app-* meta let iOS "Add to Home Screen" launch it fullscreen.
+   NOTE / limitation: Chrome's PWA install requires an https origin AND a service
+   worker, neither of which a single file:// document can provide, so a blob-URL
+   manifest won't make Android show an install prompt when opened as a local file.
+   It IS honoured if you ever host this file over http(s). The iOS home-screen path
+   works regardless, so that's the prioritised install route. */
+function makeIcon(size){
+  try{
+    const s = size, c = document.createElement('canvas');
+    c.width = c.height = s;
+    const x = c.getContext('2d');
+    if(!x) return null;
+    x.fillStyle = '#EAE6DC'; x.fillRect(0,0,s,s);                    // paper
+    x.strokeStyle = 'rgba(180,172,152,0.55)'; x.lineWidth = Math.max(1,s/128);
+    for(let y=s*0.2; y<s*0.98; y+=s*0.14){ x.beginPath(); x.moveTo(s*0.06,y); x.lineTo(s*0.94,y); x.stroke(); } // rule lines
+    const bw = Math.max(2,s*0.05); x.strokeStyle = '#1F2420'; x.lineWidth = bw;
+    x.strokeRect(bw/2,bw/2,s-bw,s-bw);                               // ink border
+    x.fillStyle = '#1F2420'; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+    x.font = '700 '+Math.round(s*0.5)+'px "Arial Narrow",Arial,sans-serif';
+    x.fillText('SO', s*0.5, s*0.62);                                 // monogram
+    x.fillStyle = '#BE6A1F'; x.fillRect(s*0.3, s*0.7, s*0.4, s*0.055); // rust underline
+    return c.toDataURL('image/png');
+  }catch(e){ return null; }
+}
+function installPWA(){
+  const i180 = makeIcon(180), i192 = makeIcon(192), i512 = makeIcon(512);
+  const setHref = (id,href)=>{ const el = document.getElementById(id); if(el && href) el.href = href; };
+  setHref('appleIcon', i180);
+  setHref('favIcon', i192);
+  try{
+    const manifest = {
+      name:'Summer Ops — Field Manual', short_name:'Field Manual',
+      description:'Personal summer skills field manual and session tracker.',
+      start_url:'.', scope:'.', display:'standalone', orientation:'portrait',
+      background_color:'#EAE6DC', theme_color:'#EAE6DC', icons:[]
+    };
+    if(i192) manifest.icons.push({src:i192, sizes:'192x192', type:'image/png', purpose:'any'});
+    if(i512) manifest.icons.push({src:i512, sizes:'512x512', type:'image/png', purpose:'any maskable'});
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+    const url = URL.createObjectURL(blob);
+    let m = document.querySelector('link[rel="manifest"]');
+    if(!m){ m = document.createElement('link'); m.rel = 'manifest'; document.head.appendChild(m); }
+    m.href = url;
+  }catch(e){/* manifest is best-effort */}
+  // Hosted upgrade: when served over https (or localhost), register the sidecar
+  // service worker and prefer the real manifest file if one is deployed alongside.
+  // This is what makes Android Chrome offer a true "Install app" (standalone
+  // window, offline cache). Silently skipped on plain file:// — the file stays
+  // fully self-contained without the sidecars.
+  try{
+    if(('serviceWorker' in navigator) && (location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname))){
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+      fetch('manifest.webmanifest',{method:'HEAD'}).then(r=>{
+        if(r.ok){ const m=document.querySelector('link[rel="manifest"]'); if(m) m.href='manifest.webmanifest'; }
+      }).catch(()=>{});
+    }
+  }catch(e){/* best-effort */}
+}
+
+installPWA();
+bindData();
+// Theme: synchronous localStorage peek so a dark-theme user doesn't get a cream
+// flash while loadState's async read runs (Claude.ai backend catches up in loadState).
+try{
+  if(store.backend==='localStorage'){
+    const m = JSON.parse(window.localStorage.getItem('fm:_meta')||'{}');
+    themeDark = m.theme==='dark';
+  }
+}catch(e){}
+applyTheme();
+const themeBtn = document.getElementById('themeToggle');
+if(themeBtn) themeBtn.onclick = toggleTheme;
+loadState();
+</script>
+</body>
+</html>

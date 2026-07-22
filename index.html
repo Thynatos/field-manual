@@ -612,40 +612,39 @@ const SKILLS = {
   },
   sql:{
     wo:'WO-10', title:'SQL / Career', tag:'CAREER',
-    goal:'Close the one gap between your CV and the analyst/data roles you\'re applying to. You already have the hard part (optimization, OR, modeling); what recruiters filter for and don\'t see from you is database querying. Finish a SQL course that outputs portfolio projects, not just a badge.',
-    method:'SQL is the highest-leverage career move for your specific profile: it appears in ~53% of data-analyst postings and is a first-pass ATS keyword, and it\'s the thing your CV doesn\'t already shout. The trap is chasing a logo, SQL gets tested live in interviews, so pick a course that produces demonstrable projects (write-and-explain-a-JOIN proof) over a pure multiple-choice exam. Do SQL first; add Power BI (PL-300) after only if you want extra brand signal. This compounds with your optimization strength: query fluently AND optimize, and you\'re differentiated, not just another applicant.',
+    goal:'Convert what you already have (SQL, Python, optimization) into a hireable, ATS-recognized data credential, for free. Target: pass DP-600 (Microsoft Fabric Analytics Engineer) on a free voucher, close your named LookML gap, and ship one portfolio dashboard. Directly strengthens the live applications (Glovo, Revolut, EU Parliament Data Services).',
+    method:'You do NOT need another SQL course, you already ship SQL (Jeton, BobaCo, the Car Rental DB). The gap is signal plus two named tools: Fabric semantic modeling (DP-600) and Looker/LookML (which you told Revolut you\'d pick up). All free. DP-600 is free via Fabric Data Days IF you claim a voucher by AUG 10: watch 2 sessions + 3 Learn modules, submit the form, voucher arrives in 1-2 weeks as a Fabric Community private message. Skip from-scratch SQL courses and every $200 dollar-cert (Databricks/GCP/AWS). Quant (IMC) is a separate track: probability + LeetCode, not a certificate, pick one.',
     stack:[
-      {name:'DataCamp — Associate Data Analyst in SQL (or Dataquest SQL path)', badge:'primary', note:'The pick. Builds a portfolio of real projects while teaching SQL hands-on, from basic querying through JOINs and window functions. Outputs a shareable certificate PLUS work samples. Finishable in ~2-3 months. This fills the exact gap on your CV.'},
-      {name:'Portfolio: 2-3 SQL projects on GitHub', badge:'primary', note:'The actual deliverable. A certificate is filler without work samples. Put 2-3 query projects (ideally on data you care about, ops/optimization-flavored) on your GitHub and link from your CV/LinkedIn. This is what beats other applicants in interviews.'},
-      {name:'Microsoft PL-300 (Power BI Data Analyst)', badge:'paid', note:'Stretch follow-on, AFTER SQL. Pairs SQL with Power BI, a combo many EU employers request, and it\'s a recognized ATS-friendly credential for analyst roles. More effort/cost. Only if you want the bigger brand name once the SQL foundation is solid.'},
-      {name:'Free practice: SQLBolt, Mode SQL Tutorial, LeetCode SQL', badge:'free', note:'Free hands-on drilling. SQLBolt/Mode for learning by doing; LeetCode\'s SQL questions to prep for the live interview tests (the JOIN/aggregation questions that actually get asked).'},
-      {name:'Tie it to your CV narrative', badge:'free', note:'Frame the new skill against what you have: "operations research + SQL" is a stronger story than either alone. Update the CV/LinkedIn skills + add the projects once done. Relevant to ENPower (IT track) and the EP Data Services roles specifically.'},
-      {name:'A generic "learn to code" bootcamp', badge:'skip', note:'Skip. You don\'t need a broad bootcamp, you have the engineering foundation. Narrow SQL focus is the efficient move; don\'t pay for months of stuff you already know.'}
+      {name:'DP-600 — Fabric Analytics Engineer (FREE voucher)', badge:'primary', note:'The credential. Free via Fabric Data Days: register at aka.ms/fabricdatadays, watch 2 sessions, finish 3 Learn modules, submit the request form by AUG 10 2026. Voucher lands in 1-2 weeks as a Fabric Community private message (not email), with its own expiry. SQL + data-modeling heavy = your strength. Book the exam once it arrives.'},
+      {name:'Looker / LookML (Google Skills, free)', badge:'primary', note:'You literally told Revolut you were "eager to pick up LookML." Close it. Free hands-on: skills.google/paths/28 (BI and Analytics with Looker) + the Understanding LookML course. The paid LookML Developer cert is NOT needed.'},
+      {name:'SQL + experimentation practice (free)', badge:'free', note:'You know SQL, this is speed + interview framing. Drill DataLemur and StrataScratch free tiers, add A/B-testing basics. This is what the Revolut/Glovo analyst + strategy-ops interviews actually test.'},
+      {name:'One portfolio dashboard on GitHub', badge:'primary', note:'One cert + one real project beats a badge. Build a Fabric/SQL dashboard on delivery-logistics or fintech data, push to github.com/Thynatos. Proof for exactly the roles you\'re chasing.'},
+      {name:'MITx SC0x — Supply Chain Analytics (optional)', badge:'free', note:'Only if you pivot to the DHL / Kuehne+Nagel branch. Now on learn.mit.edu (edX version is dead). Audit free, no certificate. Verified certificate is $199 standalone, no financial aid option found. Starts Aug 12. Not central to your live fintech/delivery apps.'},
+      {name:'PL-300 / Databricks / GCP / AWS certs', badge:'skip', note:'Skip. PL-300 (paid) is dominated by the free DP-600. Databricks/GCP/AWS are ~$200 each with no easy waiver, learn free and defer the exam until an employer pays.'}
     ],
     milestones:[
-      'Course picked and enrolled (DataCamp SQL or Dataquest). First module done',
-      'Core querying solid: SELECT, WHERE, ORDER BY, aggregations (COUNT/SUM/GROUP BY) without reference',
-      'JOINs locked: you can write and EXPLAIN an inner/left join out loud (the interview test)',
-      'Intermediate: subqueries, CTEs, window functions (ROW_NUMBER, RANK, running totals)',
-      'Course finished, certificate earned',
-      'First SQL portfolio project on GitHub, linked from CV/LinkedIn',
-      'Second and third projects up: enough to point a recruiter at real work',
-      'CV + LinkedIn updated: "OR + SQL" narrative, skills and projects live',
-      'Stretch: PL-300 started (only if pursuing the extra credential)'
+      'Fabric Community + Microsoft Learn profiles created (same email), registered at aka.ms/fabricdatadays',
+      '2 Data Days sessions watched + 3 Learn modules done, DP-600 voucher form submitted (by AUG 10)',
+      'Free DP-600 voucher received (Fabric Community private message), exam booked',
+      'DP-600 passed: Microsoft Certified Fabric Analytics Engineer',
+      'Looker/LookML basics done (skills.google): can write LookML dimensions and measures',
+      'SQL + A/B drilling: comfortable on DataLemur / StrataScratch medium questions',
+      'One portfolio dashboard shipped to GitHub (Fabric/SQL, on data you care about)',
+      'CV + LinkedIn updated: DP-600 + "OR + analytics engineering (Fabric, Looker)" narrative'
     ],
     activities:[
-      {t:'Course module', time:'45 MIN', d:'Do the next DataCamp/Dataquest module. Don\'t just pass exercises, retype queries from scratch until they flow. Note anything you had to look up and re-drill it next session.'},
-      {t:'LeetCode SQL drill', time:'30 MIN', d:'One or two SQL questions on LeetCode (Easy → Medium). These mirror the live JOIN/aggregation questions asked in interviews. Explain your query out loud as if to an interviewer.'},
-      {t:'Write-and-explain', time:'15 MIN', d:'Take one query you wrote and explain each clause in plain English out loud. If you can\'t explain a JOIN, you don\'t own it yet. This is the exact interview test.'},
-      {t:'Portfolio build', time:'1-2 HR', d:'Grab a dataset you care about (ops, logistics, something optimization-flavored). Ask a real question, answer it in SQL, write up the query + finding in a GitHub README. One project = one clear question answered well.'},
-      {t:'Concept patch', time:'20 MIN', d:'Pick one weak spot (window functions, CTEs, having vs where) and drill only that with SQLBolt/Mode until it clicks. One concept per session.'},
-      {t:'CV/LinkedIn pass', time:'30 MIN', d:'Once projects exist: add SQL to skills, link the GitHub projects, and reframe the narrative as "operations research + SQL". Tie it to ENPower / EP Data Services keywords.'}
+      {t:'Fabric module', time:'45 MIN', d:'Next Microsoft Learn module from the DP-600 collection (aka.ms/dd/modules), done in a free Fabric trial workspace, not just read. These count toward the free voucher AND your exam prep.'},
+      {t:'Data Days session', time:'30 MIN', d:'Watch one Data Days session (aka.ms/dd/schedule), live or on-demand. You need 2 for the voucher, pick a DP-600 exam-prep one + a semantic-models one.'},
+      {t:'Looker / LookML', time:'30 MIN', d:'Next lesson on skills.google (BI and Analytics with Looker / Understanding LookML). Write actual LookML, do not just watch.'},
+      {t:'SQL drill', time:'30 MIN', d:'1-2 DataLemur or StrataScratch questions (medium). Explain each clause out loud like an interviewer is watching. You know SQL, this is speed.'},
+      {t:'Portfolio build', time:'1-2 HR', d:'Grab a delivery/logistics or fintech dataset (Kaggle). Ask one real question, answer it in Fabric/SQL, write it up in a GitHub README. One project = one clear question.'},
+      {t:'CV / LinkedIn pass', time:'30 MIN', d:'Once DP-600 + a project exist: add the cert, link the project, reframe as "operations research + analytics engineering (Fabric, Looker)". Tie to the Glovo/Revolut/EP keywords.'}
     ],
     week:[
-      {d:'Day 1', t:'Enrol in DataCamp SQL (or Dataquest). Do module 1. This is a finishable course, not an open-ended grind.'},
-      {d:'Day 2-4', t:'One module per session. Retype queries from scratch. Start LeetCode Easy SQL alongside.'},
-      {d:'Wk 2-3', t:'Hit JOINs and window functions. Begin your first portfolio project on a dataset you like.'},
-      {d:'Wk 4+', t:'Finish the course, get the cert, push 2-3 projects to GitHub, update CV/LinkedIn. Then decide on PL-300.'}
+      {d:'Now', t:'Join the Fabric Community, register at aka.ms/fabricdatadays. Start the 3 Learn modules + first Data Days session. Clock is on: voucher form due AUG 10.'},
+      {d:'This wk', t:'Finish 2 sessions + 3 modules, submit the voucher request form. Start free Looker/LookML while the voucher processes (1-2 wks).'},
+      {d:'August', t:'Voucher lands, book + pass DP-600. Keep drilling SQL on DataLemur. Start the portfolio dashboard.'},
+      {d:'Aug-Sep', t:'Ship the portfolio dashboard to GitHub. Update CV/LinkedIn (DP-600 + Fabric/Looker). Optional: MITx SC0x if pivoting to supply-chain.'}
     ]
   }
 };
@@ -1042,7 +1041,7 @@ function methodLine(key){
     reading:'Beat the phone. Physical book, fixed slot, phone in another room.',
     baking:'Project pace. One bake when free. Learn ratios by baking it 3 ways.',
     mixology:'Project pace. Learn templates not recipes. Jigger + 3-ingredient classics.',
-    sql:'Career move. Finish a SQL course, ship portfolio projects. Fills your CV gap.'
+    sql:'Free DP-600 (Fabric) + Looker + a portfolio dashboard. Claim the free exam voucher by Aug 10.'
   };
   return lines[key]||'';
 }
